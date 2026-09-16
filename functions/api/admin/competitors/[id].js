@@ -1,75 +1,76 @@
 import { requireAdmin } from "../../../../lib/auth.js";
 
-export async function onRequestPut({ request, params, env }) {
-  const unauthorized = requireAdmin(request, env);
-  if (unauthorized) return unauthorized;
-
-  const id = Number(params.id);
-  if (!id) return Response.json({ error: "Competitor ID is required" }, { status: 400 });
-
-  const competitor = await env.DB
-    .prepare(`SELECT id, tournament_id FROM competitors WHERE id = ?`)
-    .bind(id)
-    .first();
-
-  if (!competitor) return Response.json({ error: "Competitor not found" }, { status: 404 });
-
-  const tournament = await env.DB
-    .prepare(`SELECT status FROM tournaments WHERE id = ?`)
-    .bind(competitor.tournament_id)
-    .first();
-
-  if (!tournament || tournament.status !== "setup") {
-    return Response.json({ error: "Competitors can only be changed during setup" }, { status: 400 });
-  }
-
-  let body;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-
-  const name = body.name?.trim();
-  if (!name) return Response.json({ error: "Competitor name is required" }, { status: 400 });
-
-  const used = await env.DB
-    .prepare(`SELECT id FROM matches WHERE competitor_a_id = ? OR competitor_b_id = ? OR winner_id = ? LIMIT 1`)
-    .bind(id, id, id)
-    .first();
-
-  if (used) {
-    return Response.json({ error: "Competitor cannot be edited after entering the bracket" }, { status: 400 });
-  }
-
-  const updated = await env.DB
-    .prepare(`UPDATE competitors SET name = ? WHERE id = ? RETURNING id, tournament_id, name, created_at`)
-    .bind(name, id)
-    .first();
-
-  return Response.json(updated);
-}
-
 export async function onRequestDelete({ request, params, env }) {
-  const unauthorized = requireAdmin(request, env);
-  if (unauthorized) return unauthorized;
+  const auth = requireAdmin(request, env);
+  if (!auth.ok) {
+    return Response.json({ error: auth.error }, { status: auth.status });
+  }
 
-  const id = Number(params.id);
-  if (!id) return Response.json({ error: "Competitor ID is required" }, { status: 400 });
+  const competitorId = Number(params.id);
 
-  const used = await env.DB
-    .prepare(`SELECT id FROM matches WHERE competitor_a_id = ? OR competitor_b_id = ? OR winner_id = ? LIMIT 1`)
-    .bind(id, id, id)
+  if (!Number.isInteger(competitorId) || competitorId <= 0) {
+    return Response.json(
+      { error: "Invalid competitor ID" },
+      { status: 400 }
+    );
+  }
+
+  const competitor = await env.DB.prepare(`
+    SELECT
+      c.id,
+      c.name,
+      c.tournament_id,
+      t.status
+    FROM competitors c
+    JOIN tournaments t ON t.id = c.tournament_id
+    WHERE c.id = ?
+  `)
+    .bind(competitorId)
     .first();
 
-  if (used) return Response.json({ error: "Competitor cannot be deleted after entering the bracket" }, { status: 400 });
+  if (!competitor) {
+    return Response.json(
+      { error: "Competitor not found" },
+      { status: 404 }
+    );
+  }
 
-  const deleted = await env.DB
-    .prepare(`DELETE FROM competitors WHERE id = ? RETURNING id, name`)
-    .bind(id)
+  if (competitor.status !== "setup") {
+    return Response.json(
+      { error: "Competitors can only be removed while the tournament is in setup" },
+      { status: 409 }
+    );
+  }
+
+  const bracketMatch = await env.DB.prepare(`
+    SELECT id
+    FROM matches
+    WHERE competitor_a_id = ?
+       OR competitor_b_id = ?
+    LIMIT 1
+  `)
+    .bind(competitorId, competitorId)
     .first();
 
-  if (!deleted) return Response.json({ error: "Competitor not found" }, { status: 404 });
+  if (bracketMatch) {
+    return Response.json(
+      { error: "Competitor is already in the bracket and cannot be removed" },
+      { status: 409 }
+    );
+  }
 
-  return Response.json({ success: true, deleted });
+  await env.DB.prepare(`
+    DELETE FROM competitors
+    WHERE id = ?
+  `)
+    .bind(competitorId)
+    .run();
+
+  return Response.json({
+    ok: true,
+    deleted: {
+      id: competitor.id,
+      name: competitor.name
+    }
+  });
 }
