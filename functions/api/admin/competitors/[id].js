@@ -19,10 +19,8 @@ export async function onRequestDelete({ request, params, env }) {
     SELECT
       c.id,
       c.name,
-      c.tournament_id,
-      t.status
+      c.tournament_id
     FROM competitors c
-    JOIN tournaments t ON t.id = c.tournament_id
     WHERE c.id = ?
   `)
     .bind(competitorId)
@@ -32,13 +30,6 @@ export async function onRequestDelete({ request, params, env }) {
     return Response.json(
       { error: "Competitor not found" },
       { status: 404 }
-    );
-  }
-
-  if (competitor.status !== "setup") {
-    return Response.json(
-      { error: "Competitors can only be removed while the tournament is in setup" },
-      { status: 409 }
     );
   }
 
@@ -54,7 +45,29 @@ export async function onRequestDelete({ request, params, env }) {
 
   if (bracketMatch) {
     return Response.json(
-      { error: "Competitor is already in the bracket and cannot be removed" },
+      {
+        error:
+          "Competitor is already in the bracket and cannot be removed"
+      },
+      { status: 409 }
+    );
+  }
+
+  const tournamentMatch = await env.DB.prepare(`
+    SELECT id
+    FROM matches
+    WHERE tournament_id = ?
+    LIMIT 1
+  `)
+    .bind(competitor.tournament_id)
+    .first();
+
+  if (tournamentMatch) {
+    return Response.json(
+      {
+        error:
+          "Competitors can only be removed before generating the bracket"
+      },
       { status: 409 }
     );
   }
