@@ -686,26 +686,98 @@ async function loadCompetitors(){
 
   competitors=await fetch(
     `/api/competitors?tournament_id=${tournamentId}`
-  ).then(r=>r.json());
+  ).then(async r=>{
+
+    const data=await r.json();
+
+    if(!r.ok){
+      throw new Error(
+        data.error||"Could not load competitors"
+      );
+    }
+
+    return data;
+  });
 
   $("competitors").innerHTML=
     competitors.length
     ?competitors.map(c=>`
       <div class="competitor card">
 
-        <strong>
-          ${html(c.name)}
-        </strong>
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
 
-        <span class="muted">
-          ID ${c.id}
-        </span>
+          <div>
+            <strong>
+              ${html(c.name)}
+            </strong>
+
+            <div class="muted small">
+              ID ${c.id}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="danger"
+            onclick="deleteCompetitor(${c.id})"
+          >
+            Remove
+          </button>
+
+        </div>
 
       </div>
     `).join("")
     :`<div class="empty">
         No competitors yet.
       </div>`;
+}
+
+async function deleteCompetitor(id){
+
+  const competitor=competitors.find(
+    c=>Number(c.id)===Number(id)
+  );
+
+  if(!competitor){
+    setMessage(
+      "Competitor not found. Refresh and try again.",
+      "error"
+    );
+    return;
+  }
+
+  if(!confirm(
+    `Remove competitor "${competitor.name}"? This can only be done before the bracket is generated.`
+  )){
+    return;
+  }
+
+  try{
+
+    await api(
+      `/api/admin/competitors/${id}`,
+      {
+        method:"DELETE"
+      }
+    );
+
+    setMessage(
+      `Removed ${competitor.name}.`,
+      "success"
+    );
+
+    await loadCompetitors();
+    await loadSummary();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
 }
 
 $("competitor-form").addEventListener(
@@ -826,15 +898,6 @@ $("process-byes").addEventListener(
 
 async function loadBracket(){
 
-  /*
-   * IMPORTANT:
-   * Remember which match is currently selected before
-   * rebuilding the match dropdown.
-   *
-   * This prevents recording a wager on Match 2 from
-   * visually jumping the dropdown back to Match 1.
-   */
-
   const previousMatchId=$("wager-match").value;
 
   const d=await fetch(
@@ -885,11 +948,6 @@ async function loadBracket(){
     `
   ).join("");
 
-  /*
-   * Restore the previously selected match if it
-   * still exists in the newly loaded bracket.
-   */
-
   if(
     previousMatchId &&
     eligibleMatches.some(
@@ -898,12 +956,6 @@ async function loadBracket(){
   ){
     select.value=previousMatchId;
   }
-
-  /*
-   * If the previously selected match no longer exists
-   * (for example because it was completed), allow the
-   * browser to use the first available match.
-   */
 
   updateWagerCompetitors();
 
@@ -1340,9 +1392,9 @@ function updateWagerCompetitors(){
   s.innerHTML=
     m
     ?[
-      m.competitor_a,
-      m.competitor_b
-    ]
+        m.competitor_a,
+        m.competitor_b
+      ]
       .filter(Boolean)
       .map(
         c=>`
@@ -1413,11 +1465,6 @@ $("wager-form").addEventListener(
 
     e.preventDefault();
 
-    /*
-     * Save the selected match BEFORE doing
-     * anything that reloads the bracket.
-     */
-
     const selectedMatchId=
       $("wager-match").value;
 
@@ -1453,18 +1500,8 @@ $("wager-form").addEventListener(
         "success"
       );
 
-      /*
-       * loadBracket() now restores the selected
-       * match automatically.
-       */
-
       await loadBracket();
       await loadSummary();
-
-      /*
-       * Explicitly restore it as an additional
-       * safeguard after the reload.
-       */
 
       if(
         [...$("wager-match").options]
@@ -1637,4 +1674,3 @@ async function deleteWager(id){
 
 </body>
 </html>
-
