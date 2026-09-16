@@ -1,14 +1,8 @@
 import { requireAdmin } from "../../../../lib/auth.js";
 
 export async function onRequestDelete({ request, params, env }) {
-  const auth = requireAdmin(request, env);
-
-  if (!auth.ok) {
-    return Response.json(
-      { error: auth.error },
-      { status: auth.status }
-    );
-  }
+  const unauthorized = requireAdmin(request, env);
+  if (unauthorized) return unauthorized;
 
   const competitorId = Number(params.id);
 
@@ -19,14 +13,12 @@ export async function onRequestDelete({ request, params, env }) {
     );
   }
 
-  const competitor = await env.DB.prepare(`
-    SELECT
-      c.id,
-      c.name,
-      c.tournament_id
-    FROM competitors c
-    WHERE c.id = ?
-  `)
+  const competitor = await env.DB
+    .prepare(`
+      SELECT id, name, tournament_id
+      FROM competitors
+      WHERE id = ?
+    `)
     .bind(competitorId)
     .first();
 
@@ -37,34 +29,30 @@ export async function onRequestDelete({ request, params, env }) {
     );
   }
 
-  const existingBracket = await env.DB.prepare(`
-    SELECT id
-    FROM rounds
-    WHERE tournament_id = ?
-    LIMIT 1
-  `)
+  const bracket = await env.DB
+    .prepare(`
+      SELECT id
+      FROM rounds
+      WHERE tournament_id = ?
+      LIMIT 1
+    `)
     .bind(competitor.tournament_id)
     .first();
 
-  if (existingBracket) {
+  if (bracket) {
     return Response.json(
-      {
-        error:
-          "Competitors can only be removed before generating the bracket"
-      },
+      { error: "Cannot remove competitors after the bracket has been generated" },
       { status: 409 }
     );
   }
 
-  await env.DB.prepare(`
-    DELETE FROM competitors
-    WHERE id = ?
-  `)
+  await env.DB
+    .prepare(`DELETE FROM competitors WHERE id = ?`)
     .bind(competitorId)
     .run();
 
   return Response.json({
-    ok: true,
+    success: true,
     deleted: {
       id: competitor.id,
       name: competitor.name
