@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | One Tournament</title>
+<style>
+:root{--bg:#15110e;--panel:#211a14;--panel2:#2b2119;--line:#56432d;--gold:#c9a227;--cream:#e8dbb8;--muted:#a89a7a;--red:#8b302b;--green:#52683c}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at top,#302317 0,#15110e 50%);color:var(--cream);font-family:Georgia,serif}
+main{max-width:1450px;margin:auto;padding:30px 18px 80px}
+h1,h2,h3{color:var(--gold)}
+h1{font-size:40px}
+.panel{background:rgba(33,26,20,.96);border:1px solid var(--line);border-radius:9px;padding:20px;margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:14px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+form{display:grid;gap:10px;max-width:650px}
+label{display:grid;gap:5px;color:var(--muted)}
+input,textarea,select,button{font:inherit;border:1px solid var(--line);border-radius:5px;padding:9px 11px}
+input,textarea,select{background:#100d0b;color:var(--cream)}
+button{background:var(--gold);color:#15110e;font-weight:bold;cursor:pointer}
+button.secondary{background:var(--panel2);color:var(--cream)}
+button.danger{background:var(--red);color:#fff}
+button.good{background:var(--green);color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+.status{color:var(--gold);text-transform:uppercase;font-size:12px;letter-spacing:.1em}
+.notice{padding:12px;border-radius:6px;margin:10px 0;background:#2a2119;border:1px solid var(--line)}
+.error{border-color:var(--red);color:#f0b6ad}
+.success{border-color:var(--green)}
+.match{margin-bottom:10px}
+.fighter{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #423326}
+.winner{color:var(--gold);font-weight:bold}
+.small{font-size:13px}
+.inline-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.scroll{overflow:auto}
+.stat strong{font-size:20px}
+.login{max-width:500px;margin:80px auto}
+.empty{padding:18px;color:var(--muted);border:1px dashed var(--line);border-radius:7px}
+</style>
+</head>
+
+<body>
+
+<main>
+
+<h1>One Tournament Admin</h1>
+
+<section id="login-panel" class="panel login">
+
+<h2>Admin Login</h2>
+
+<form id="login-form">
+<label>
+Password
+<input id="password" type="password" required autofocus>
+</label>
+
+<button type="submit">Login</button>
+</form>
+
+<div id="login-message"></div>
+
+</section>
+
+<div id="app" class="hidden">
+
+<section class="panel">
+
+<div class="row">
+
+<div style="flex:1;min-width:260px">
+<label>
+Selected Tournament
+<select id="tournament-select"></select>
+</label>
+</div>
+
+<button type="button" class="secondary" id="refresh">
+Refresh
+</button>
+
+<a href="/" style="padding:10px 0;color:var(--gold)">
+Public Site
+</a>
+
+</div>
+
+<div id="message"></div>
+
+</section>
+
+<section class="panel">
+
+<h2>Create Tournament</h2>
+
+<form id="create-tournament-form">
+
+<label>
+Name
+<input id="create-name" required placeholder="1v1">
+</label>
+
+<label>
+Description
+<textarea id="create-description" placeholder="Naked"></textarea>
+</label>
+
+<button type="submit">
+Create Tournament
+</button>
+
+</form>
+
+</section>
+
+<section id="manage" class="hidden">
+
+<section class="panel">
+
+<h2>Tournament Setup</h2>
+
+<div id="summary" class="grid"></div>
+
+<form id="edit-tournament-form" style="margin-top:18px">
+
+<label>
+Name
+<input id="edit-name" required>
+</label>
+
+<label>
+Description
+<textarea id="edit-description"></textarea>
+</label>
+
+<button type="submit">
+Save Tournament
+</button>
+
+</form>
+
+<div class="inline-actions">
+
+<button type="button" data-status="setup" class="secondary">
+Setup
+</button>
+
+<button type="button" data-status="betting" class="secondary">
+Betting
+</button>
+
+<button type="button" data-status="in_progress" class="secondary">
+In Progress
+</button>
+
+<button type="button" data-status="completed" class="secondary">
+Completed
+</button>
+
+<button type="button" id="delete-tournament" class="danger">
+Delete Tournament
+</button>
+
+</div>
+
+</section>
+
+<section class="panel">
+
+<h2>Competitors</h2>
+
+<form id="competitor-form">
+
+<label>
+Name
+<input id="competitor-name" required>
+</label>
+
+<button type="submit">
+Add Competitor
+</button>
+
+</form>
+
+<div id="competitors" style="margin-top:16px"></div>
+
+</section>
+
+<section class="panel">
+
+<h2>Bracket</h2>
+
+<p class="muted">
+Generate once the competitor list is complete. Round 1 byes can be processed automatically.
+</p>
+
+<div class="inline-actions">
+
+<button type="button" id="generate-bracket">
+Generate Bracket
+</button>
+
+<button type="button" id="process-byes" class="secondary">
+Process Byes
+</button>
+
+</div>
+
+<div id="bracket" class="grid" style="margin-top:16px"></div>
+
+</section>
+
+<section class="panel">
+
+<h2>Bettors</h2>
+
+<form id="bettor-form">
+
+<label>
+Name
+<input id="bettor-name" required>
+</label>
+
+<button type="submit">
+Add Bettor
+</button>
+
+</form>
+
+<div id="bettors" class="grid" style="margin-top:16px"></div>
+
+</section>
+
+<section class="panel">
+
+<h2>Wager Entry</h2>
+
+<form id="wager-form">
+
+<label>
+Match
+<select id="wager-match" required></select>
+</label>
+
+<label>
+Bettor
+<select id="wager-bettor" required></select>
+</label>
+
+<label>
+Competitor
+<select id="wager-competitor" required></select>
+</label>
+
+<label>
+Gold
+<input id="wager-amount" type="number" min="1" step="1" required>
+</label>
+
+<button type="submit">
+Record Wager
+</button>
+
+</form>
+
+<div id="wager-odds" class="notice muted"></div>
+
+<div id="wagers" style="margin-top:14px"></div>
+
+</section>
+
+</section>
+
+</div>
+
+</main>
+
+<script>
+
+let token="";
+let tournamentId=null;
+let tournament=null;
+let competitors=[];
+let bettors=[];
+let rounds=[];
+
+const $=id=>document.getElementById(id);
+
+function html(v){
+  return String(v??"").replace(/[&<>'"]/g,c=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    "'":"&#39;",
+    "\"":"&quot;"
+  }[c]));
+}
+
+function setMessage(text,type=""){
+  const box=$("message");
+
+  box.className=`notice ${type}`;
+  box.textContent=text;
+  box.hidden=!text;
+}
+
+function setLoginMessage(text){
+  $("login-message").className="notice error";
+  $("login-message").textContent=text;
+  $("login-message").hidden=!text;
+}
+
+async function api(path,options={}){
+  const headers={
+    ...(options.headers||{}),
+    Authorization:`Bearer ${token}`
+  };
+
+  if(options.body!==undefined){
+    headers["Content-Type"]="application/json";
+  }
+
+  const r=await fetch(path,{
+    ...options,
+    headers
+  });
+
+  let data;
+
+  try{
+    data=await r.json();
+  }catch{
+    data={
+      error:`HTTP ${r.status}`
+    };
+  }
+
+  if(!r.ok){
+    throw new Error(
+      data.error||`Request failed (${r.status})`
+    );
+  }
+
+  return data;
+}
+
+async function login(e){
+
+  e.preventDefault();
+
+  setLoginMessage("");
+
+  const value=$("password").value;
+
+  const r=await fetch("/api/admin/ping",{
+    headers:{
+      Authorization:`Bearer ${value}`
+    }
+  });
+
+  if(!r.ok){
+    setLoginMessage("Invalid admin password.");
+    return;
+  }
+
+  token=value;
+
+  $("login-panel").classList.add("hidden");
+  $("app").classList.remove("hidden");
+
+  await loadAll();
+}
+
+$("login-form").addEventListener(
+  "submit",
+  e=>login(e).catch(err=>setLoginMessage(err.message))
+);
+
+async function loadAll(){
+
+  setMessage("Loading...");
+
+  const list=await fetch("/api/tournaments").then(async r=>{
+
+    const d=await r.json();
+
+    if(!r.ok){
+      throw new Error(
+        d.error||"Could not load tournaments"
+      );
+    }
+
+    return d;
+  });
+
+  const select=$("tournament-select");
+
+  select.innerHTML=list.length
+    ?list.map(t=>`
+      <option value="${t.id}">
+        #${t.id} ${html(t.name)} — ${html(t.status)}
+      </option>
+    `).join("")
+    :"";
+
+  if(!list.length){
+
+    tournamentId=null;
+
+    $("manage").classList.add("hidden");
+
+    setMessage(
+      "No tournaments yet. Create one below."
+    );
+
+    return;
+  }
+
+  if(
+    !list.some(
+      t=>Number(t.id)===Number(tournamentId)
+    )
+  ){
+    tournamentId=Number(list[0].id);
+  }
+
+  select.value=tournamentId;
+
+  $("manage").classList.remove("hidden");
+
+  await loadTournament();
+
+  setMessage("");
+}
+
+$("refresh").addEventListener(
+  "click",
+  ()=>loadAll().catch(e=>setMessage(e.message,"error"))
+);
+
+$("tournament-select").addEventListener(
+  "change",
+  async()=>{
+
+    tournamentId=Number($("tournament-select").value);
+
+    try{
+      await loadTournament();
+      setMessage("");
+    }catch(e){
+      setMessage(e.message,"error");
+    }
+  }
+);
+
+$("create-tournament-form").addEventListener(
+  "submit",
+  async e=>{
+
+    e.preventDefault();
+
+    try{
+
+      const data=await api(
+        "/api/admin/tournaments",
+        {
+          method:"POST",
+          body:JSON.stringify({
+            name:$("create-name").value,
+            description:$("create-description").value
+          })
+        }
+      );
+
+      $("create-name").value="";
+      $("create-description").value="";
+
+      tournamentId=Number(data.id);
+
+      setMessage(
+        `Created tournament #${data.id}: ${data.name}`,
+        "success"
+      );
+
+      await loadAll();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+async function loadTournament(){
+
+  tournament=await api(
+    `/api/tournaments/${tournamentId}`
+  );
+
+  $("edit-name").value=tournament.name;
+
+  $("edit-description").value=
+    tournament.description||"";
+
+  await Promise.all([
+    loadSummary(),
+    loadCompetitors(),
+    loadBracket(),
+    loadBettors()
+  ]);
+}
+
+async function loadSummary(){
+
+  const d=await api(
+    `/api/tournaments/${tournamentId}/summary`
+  );
+
+  const items=[
+    ["Status",d.tournament.status],
+    ["Competitors",d.competitors.count],
+    ["Matches",`${d.matches.completed} / ${d.matches.total}`],
+    ["Betting Open",d.matches.betting_open],
+    [
+      "Total Wagered",
+      `${Number(d.betting.total_wagered).toLocaleString()}g`
+    ],
+    [
+      "Bettors",
+      d.betting.bettor_count
+    ],
+    [
+      "Payouts",
+      `${Number(d.betting.total_payouts).toLocaleString()}g`
+    ],
+    [
+      "Tournament Cut",
+      `${Number(d.tournament.cut).toLocaleString()}g`
+    ]
+  ];
+
+  $("summary").innerHTML=items.map(x=>`
+    <div class="card stat">
+      <div class="muted small">
+        ${x[0]}
+      </div>
+
+      <strong>
+        ${html(x[1])}
+      </strong>
+    </div>
+  `).join("");
+}
+
+$("edit-tournament-form").addEventListener(
+  "submit",
+  async e=>{
+
+    e.preventDefault();
+
+    try{
+
+      const d=await api(
+        `/api/admin/tournaments/${tournamentId}`,
+        {
+          method:"PUT",
+          body:JSON.stringify({
+            name:$("edit-name").value,
+            description:$("edit-description").value
+          })
+        }
+      );
+
+      setMessage(
+        `Saved ${d.name}.`,
+        "success"
+      );
+
+      await loadAll();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+document.querySelectorAll("[data-status]")
+.forEach(
+  b=>b.addEventListener(
+    "click",
+    async()=>{
+
+      try{
+
+        const d=await api(
+          `/api/admin/tournaments/${tournamentId}/status`,
+          {
+            method:"POST",
+            body:JSON.stringify({
+              status:b.dataset.status
+            })
+          }
+        );
+
+        setMessage(
+          `Tournament status: ${d.status}`,
+          "success"
+        );
+
+        await loadAll();
+
+      }catch(err){
+
+        setMessage(
+          err.message,
+          "error"
+        );
+
+      }
+
+    }
+  )
+);
+
+$("delete-tournament").addEventListener(
+  "click",
+  async()=>{
+
+    if(!tournament){
+      return;
+    }
+
+    if(
+      !confirm(
+        `Delete tournament #${tournament.id} “${tournament.name}”? This permanently deletes its bracket, wagers and payouts.`
+      )
+    ){
+      return;
+    }
+
+    try{
+
+      const d=await api(
+        `/api/admin/tournaments/${tournamentId}`,
+        {
+          method:"DELETE"
+        }
+      );
+
+      tournamentId=null;
+
+      setMessage(
+        `Deleted ${d.deleted.name}.`,
+        "success"
+      );
+
+      await loadAll();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+async function loadCompetitors(){
+
+  competitors=await fetch(
+    `/api/competitors?tournament_id=${tournamentId}`
+  ).then(r=>r.json());
+
+  $("competitors").innerHTML=
+    competitors.length
+    ?competitors.map(c=>`
+      <div class="competitor card">
+
+        <strong>
+          ${html(c.name)}
+        </strong>
+
+        <span class="muted">
+          ID ${c.id}
+        </span>
+
+      </div>
+    `).join("")
+    :`<div class="empty">
+        No competitors yet.
+      </div>`;
+}
+
+$("competitor-form").addEventListener(
+  "submit",
+  async e=>{
+
+    e.preventDefault();
+
+    try{
+
+      const d=await api(
+        "/api/admin/competitors",
+        {
+          method:"POST",
+          body:JSON.stringify({
+            tournament_id:tournamentId,
+            name:$("competitor-name").value
+          })
+        }
+      );
+
+      $("competitor-name").value="";
+
+      setMessage(
+        `Added ${d.name}.`,
+        "success"
+      );
+
+      await loadCompetitors();
+      await loadSummary();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+$("generate-bracket").addEventListener(
+  "click",
+  async()=>{
+
+    if(
+      !confirm(
+        "Generate the bracket from the current competitor list? This cannot be undone without deleting the tournament."
+      )
+    ){
+      return;
+    }
+
+    try{
+
+      const d=await api(
+        `/api/admin/tournaments/${tournamentId}/bracket/generate`,
+        {
+          method:"POST",
+          body:"{}"
+        }
+      );
+
+      setMessage(
+        `Bracket generated: ${d.bracket_size}-slot bracket.`,
+        "success"
+      );
+
+      await loadTournament();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+$("process-byes").addEventListener(
+  "click",
+  async()=>{
+
+    try{
+
+      const d=await api(
+        `/api/admin/tournaments/${tournamentId}/bracket/byes`,
+        {
+          method:"POST",
+          body:"{}"
+        }
+      );
+
+      setMessage(
+        `Processed ${d.byes_processed} byes.`,
+        "success"
+      );
+
+      await loadBracket();
+      await loadSummary();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+async function loadBracket(){
+
+  /*
+   * IMPORTANT:
+   * Remember which match is currently selected before
+   * rebuilding the match dropdown.
+   *
+   * This prevents recording a wager on Match 2 from
+   * visually jumping the dropdown back to Match 1.
+   */
+
+  const previousMatchId=$("wager-match").value;
+
+  const d=await fetch(
+    `/api/tournaments/${tournamentId}/bracket`
+  ).then(async r=>{
+
+    const x=await r.json();
+
+    if(!r.ok){
+      throw new Error(
+        x.error||"Could not load bracket"
+      );
+    }
+
+    return x;
+  });
+
+  rounds=d.rounds||[];
+
+  renderBracket();
+
+  const matches=rounds.flatMap(
+    r=>r.matches.map(
+      m=>({
+        ...m,
+        round_name:r.name
+      })
+    )
+  );
+
+  const select=$("wager-match");
+
+  const eligibleMatches=matches.filter(
+    m=>
+      m.competitor_a &&
+      m.competitor_b &&
+      m.status!=="completed"
+  );
+
+  select.innerHTML=eligibleMatches.map(
+    m=>`
+      <option value="${m.id}">
+        ${html(m.round_name)} #${m.match_number}:
+        ${html(m.competitor_a.name)}
+        vs
+        ${html(m.competitor_b.name)}
+      </option>
+    `
+  ).join("");
+
+  /*
+   * Restore the previously selected match if it
+   * still exists in the newly loaded bracket.
+   */
+
+  if(
+    previousMatchId &&
+    eligibleMatches.some(
+      m=>String(m.id)===String(previousMatchId)
+    )
+  ){
+    select.value=previousMatchId;
+  }
+
+  /*
+   * If the previously selected match no longer exists
+   * (for example because it was completed), allow the
+   * browser to use the first available match.
+   */
+
+  updateWagerCompetitors();
+
+  if(select.value){
+    await loadWagers();
+  }else{
+    $("wagers").innerHTML="";
+    $("wager-odds").textContent=
+      "No open match selected.";
+  }
+}
+
+function renderBracket(){
+
+  $("bracket").innerHTML=
+    rounds.length
+    ?rounds.map(
+      r=>`
+        <div class="card">
+
+          <h3>
+            ${html(r.name)}
+          </h3>
+
+          ${r.matches.map(matchCard).join("")}
+
+        </div>
+      `
+    ).join("")
+    :`<div class="empty">
+        No bracket generated.
+      </div>`;
+}
+
+function matchCard(m){
+
+  const a=m.competitor_a;
+  const b=m.competitor_b;
+
+  const winner=
+    m.winner_id===a?.id
+      ?a?.name
+      :m.winner_id===b?.id
+        ?b?.name
+        :null;
+
+  return `
+    <div class="card match">
+
+      <div class="muted small">
+        Match ${m.match_number}
+      </div>
+
+      <div class="fighter ${
+        m.winner_id===a?.id
+          ?"winner"
+          :""
+      }">
+
+        <span>
+          ${html(a?.name||"BYE")}
+        </span>
+
+        ${
+          m.winner_id===a?.id
+            ?"WIN"
+            :""
+        }
+
+      </div>
+
+      <div class="fighter ${
+        m.winner_id===b?.id
+          ?"winner"
+          :""
+      }">
+
+        <span>
+          ${html(b?.name||"BYE")}
+        </span>
+
+        ${
+          m.winner_id===b?.id
+            ?"WIN"
+            :""
+        }
+
+      </div>
+
+      <div class="status">
+
+        ${html(m.status)}
+
+        ${
+          m.betting_open
+            ?" · betting open"
+            :""
+        }
+
+        ${
+          winner
+            ?` · ${html(winner)}`
+            :""
+        }
+
+      </div>
+
+      <div class="inline-actions">
+
+        ${
+          a &&
+          b &&
+          m.status!=="completed"
+          ?`
+            <button
+              type="button"
+              class="secondary"
+              onclick="toggleBetting(
+                ${m.id},
+                ${!m.betting_open}
+              )"
+            >
+              ${
+                m.betting_open
+                  ?"Close Betting"
+                  :"Open Betting"
+              }
+            </button>
+
+            <button
+              type="button"
+              onclick="setWinner(
+                ${m.id},
+                ${a.id}
+              )"
+            >
+              ${html(a.name)} Wins
+            </button>
+
+            <button
+              type="button"
+              onclick="setWinner(
+                ${m.id},
+                ${b.id}
+              )"
+            >
+              ${html(b.name)} Wins
+            </button>
+          `
+          :""
+        }
+
+        ${
+          m.status==="completed"
+          ?`
+            <button
+              type="button"
+              class="danger"
+              onclick="undoWinner(${m.id})"
+            >
+              Undo Winner
+            </button>
+
+            <button
+              type="button"
+              class="secondary"
+              onclick="settleMatch(${m.id})"
+            >
+              Settle
+            </button>
+          `
+          :""
+        }
+
+      </div>
+
+    </div>
+  `;
+}
+
+async function toggleBetting(id,open){
+
+  try{
+
+    await api(
+      `/api/admin/matches/${id}/betting`,
+      {
+        method:"POST",
+        body:JSON.stringify({
+          open
+        })
+      }
+    );
+
+    setMessage(
+      open
+        ?"Betting opened."
+        :"Betting closed.",
+      "success"
+    );
+
+    await loadBracket();
+    await loadSummary();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
+}
+
+async function setWinner(id,winner_id){
+
+  if(!confirm("Record this winner?")){
+    return;
+  }
+
+  try{
+
+    await api(
+      `/api/admin/matches/${id}/winner`,
+      {
+        method:"POST",
+        body:JSON.stringify({
+          winner_id
+        })
+      }
+    );
+
+    setMessage(
+      "Winner recorded and advanced.",
+      "success"
+    );
+
+    await loadTournament();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
+}
+
+async function undoWinner(id){
+
+  if(
+    !confirm(
+      "Undo this winner? The match will be returned to pending and the winner will be removed from the next round."
+    )
+  ){
+    return;
+  }
+
+  try{
+
+    await api(
+      `/api/admin/matches/${id}/undo-winner`,
+      {
+        method:"POST",
+        body:"{}"
+      }
+    );
+
+    setMessage(
+      "Winner undone.",
+      "success"
+    );
+
+    await loadTournament();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
+}
+
+async function settleMatch(id){
+
+  if(
+    !confirm(
+      "Settle this match and finalize payouts?"
+    )
+  ){
+    return;
+  }
+
+  try{
+
+    const d=await api(
+      `/api/admin/matches/${id}/settle`,
+      {
+        method:"POST",
+        body:"{}"
+      }
+    );
+
+    setMessage(
+      `Settled: ${Number(
+        d.settlement.total_pool
+      ).toLocaleString()}g pool, ${
+        Number(
+          d.settlement.tournament_cut
+        ).toLocaleString()
+      }g cut.`,
+      "success"
+    );
+
+    await loadTournament();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
+}
+
+async function loadBettors(){
+
+  bettors=await api(
+    `/api/admin/bettors?tournament_id=${tournamentId}`
+  );
+
+  $("bettors").innerHTML=
+    bettors.length
+    ?bettors.map(
+      b=>`
+        <div class="card">
+
+          <strong>
+            ${html(b.name)}
+          </strong>
+
+          <div class="muted small">
+            ID ${b.id}
+          </div>
+
+        </div>
+      `
+    ).join("")
+    :`<div class="empty">
+        No bettors yet.
+      </div>`;
+
+  $("wager-bettor").innerHTML=
+    bettors.map(
+      b=>`
+        <option value="${b.id}">
+          ${html(b.name)}
+        </option>
+      `
+    ).join("");
+}
+
+$("bettor-form").addEventListener(
+  "submit",
+  async e=>{
+
+    e.preventDefault();
+
+    try{
+
+      const d=await api(
+        "/api/admin/bettors",
+        {
+          method:"POST",
+          body:JSON.stringify({
+            tournament_id:tournamentId,
+            name:$("bettor-name").value
+          })
+        }
+      );
+
+      $("bettor-name").value="";
+
+      setMessage(
+        `Added bettor ${d.name}.`,
+        "success"
+      );
+
+      await loadBettors();
+      await loadSummary();
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+$("wager-match").addEventListener(
+  "change",
+  async()=>{
+
+    updateWagerCompetitors();
+    await loadWagers();
+
+  }
+);
+
+$("wager-competitor").addEventListener(
+  "change",
+  loadOdds
+);
+
+function updateWagerCompetitors(){
+
+  const m=rounds
+    .flatMap(r=>r.matches)
+    .find(
+      x=>Number(x.id)===
+        Number($("wager-match").value)
+    );
+
+  const s=$("wager-competitor");
+
+  s.innerHTML=
+    m
+    ?[
+      m.competitor_a,
+      m.competitor_b
+    ]
+      .filter(Boolean)
+      .map(
+        c=>`
+          <option value="${c.id}">
+            ${html(c.name)}
+          </option>
+        `
+      ).join("")
+    :"";
+
+  loadOdds();
+}
+
+async function loadOdds(){
+
+  const id=$("wager-match").value;
+
+  if(!id){
+
+    $("wager-odds").textContent=
+      "No open match selected.";
+
+    return;
+  }
+
+  try{
+
+    const d=await fetch(
+      `/api/matches/${id}/odds`
+    ).then(r=>r.json());
+
+    $("wager-odds").textContent=
+      `${d.competitor_a.name}: ${
+        d.competitor_a.odds==null
+          ?"—"
+          :d.competitor_a.odds.toFixed(3)+"x"
+      } (${
+        Number(
+          d.competitor_a.pool
+        ).toLocaleString()
+      }g) · ${
+        d.competitor_b.name
+      }: ${
+        d.competitor_b.odds==null
+          ?"—"
+          :d.competitor_b.odds.toFixed(3)+"x"
+      } (${
+        Number(
+          d.competitor_b.pool
+        ).toLocaleString()
+      }g) · Total ${
+        Number(
+          d.total_pool
+        ).toLocaleString()
+      }g`;
+
+  }catch(e){
+
+    $("wager-odds").textContent=
+      e.message;
+
+  }
+}
+
+$("wager-form").addEventListener(
+  "submit",
+  async e=>{
+
+    e.preventDefault();
+
+    /*
+     * Save the selected match BEFORE doing
+     * anything that reloads the bracket.
+     */
+
+    const selectedMatchId=
+      $("wager-match").value;
+
+    try{
+
+      const d=await api(
+        "/api/admin/wagers",
+        {
+          method:"POST",
+          body:JSON.stringify({
+            match_id:Number(
+              selectedMatchId
+            ),
+            bettor_id:Number(
+              $("wager-bettor").value
+            ),
+            competitor_id:Number(
+              $("wager-competitor").value
+            ),
+            amount:Number(
+              $("wager-amount").value
+            )
+          })
+        }
+      );
+
+      $("wager-amount").value="";
+
+      setMessage(
+        `Recorded ${
+          Number(d.amount).toLocaleString()
+        }g wager.`,
+        "success"
+      );
+
+      /*
+       * loadBracket() now restores the selected
+       * match automatically.
+       */
+
+      await loadBracket();
+      await loadSummary();
+
+      /*
+       * Explicitly restore it as an additional
+       * safeguard after the reload.
+       */
+
+      if(
+        [...$("wager-match").options]
+          .some(
+            option=>
+              String(option.value)===
+              String(selectedMatchId)
+          )
+      ){
+
+        $("wager-match").value=
+          selectedMatchId;
+
+        updateWagerCompetitors();
+        await loadWagers();
+
+      }
+
+    }catch(err){
+
+      setMessage(
+        err.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+async function loadWagers(){
+
+  const id=$("wager-match").value;
+
+  if(!id){
+
+    $("wagers").innerHTML="";
+
+    return;
+  }
+
+  try{
+
+    const rows=await api(
+      `/api/admin/wagers?match_id=${id}`
+    );
+
+    $("wagers").innerHTML=
+      rows.length
+      ?rows.map(
+        w=>`
+          <div
+            class="card"
+            style="
+              display:flex;
+              justify-content:space-between;
+              gap:12px;
+              align-items:center
+            "
+          >
+
+            <span>
+
+              <strong>
+                ${html(w.bettor_name)}
+              </strong>
+
+              →
+              ${html(w.competitor_name)}
+              ·
+              ${Number(
+                w.amount
+              ).toLocaleString()}g
+
+              <span class="muted small">
+
+                ${html(w.status)}
+                ·
+
+                ${
+                  w.odds_at_bet==null
+                    ?"—"
+                    :Number(
+                        w.odds_at_bet
+                      ).toFixed(3)+"x"
+                }
+
+              </span>
+
+            </span>
+
+            ${
+              w.status==="pending"
+              ?`
+                <button
+                  type="button"
+                  class="danger"
+                  onclick="deleteWager(${w.id})"
+                >
+                  Delete
+                </button>
+              `
+              :`
+                <strong>
+                  ${Number(
+                    w.payout
+                  ).toLocaleString()}g
+                </strong>
+              `
+            }
+
+          </div>
+        `
+      ).join("")
+      :`<div class="empty">
+          No wagers.
+        </div>`;
+
+    await loadOdds();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
+}
+
+async function deleteWager(id){
+
+  if(
+    !confirm(
+      "Delete this pending wager?"
+    )
+  ){
+    return;
+  }
+
+  try{
+
+    await api(
+      `/api/admin/wagers/${id}`,
+      {
+        method:"DELETE"
+      }
+    );
+
+    setMessage(
+      "Wager deleted.",
+      "success"
+    );
+
+    await loadWagers();
+    await loadBracket();
+    await loadSummary();
+
+  }catch(e){
+
+    setMessage(
+      e.message,
+      "error"
+    );
+
+  }
+}
+
+</script>
+
+</body>
+</html>
+

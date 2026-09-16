@@ -1,0 +1,8 @@
+name = "one-tournament"
+pages_build_output_dir = "public"
+compatibility_date = "2026-09-16"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "one-tournament"
+database_id = "e6467644-c0ac-4d7d-b07f-64fda2f742a1"

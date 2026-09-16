@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>One Tournament</title>
+  {{ $css := resources.Get "css/site.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="/">
+        <span class="brand-mark">OT</span>
+        <span>
+          <strong>ONE TOURNAMENT</strong>
+          <small>UO OUTLANDS</small>
+        </span>
+      </a>
+      <span class="header-link">TOURNAMENTS</span>
+    </div>
+  </header>
+
+  <main class="shell page">
+    <section class="page-heading">
+      <div>
+        <div class="kicker">LIVE TOURNAMENTS</div>
+        <h1>Tournaments</h1>
+        <p>Follow the bracket, betting pools, odds and results.</p>
+      </div>
+    </section>
+
+    <div id="tournament-list" class="tournament-grid">
+      <div class="loading-card">Loading tournaments...</div>
+    </div>
+  </main>
+
+  <script>
+    async function loadTournaments() {
+      const target = document.getElementById("tournament-list");
+
+      try {
+        const response = await fetch("/api/tournaments");
+        if (!response.ok) throw new Error("Unable to load tournaments.");
+
+        const tournaments = await response.json();
+
+        if (!tournaments.length) {
+          target.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">⚔</div>
+              <h2>No tournaments yet</h2>
+              <p>There are currently no public tournaments.</p>
+            </div>
+          `;
+          return;
+        }
+
+        target.innerHTML = tournaments.map(t => `
+          <a class="tournament-card" href="/tournaments/?id=${encodeURIComponent(t.id)}">
+            <div class="card-top">
+              <span class="status status-${escapeHtml(t.status)}">${escapeHtml(t.status)}</span>
+              <span class="arrow">→</span>
+            </div>
+            <h2>${escapeHtml(t.name)}</h2>
+            <p>${escapeHtml(t.description || "Tournament details coming soon.")}</p>
+            <div class="card-footer">
+              <span>VIEW TOURNAMENT</span>
+              <span>#${escapeHtml(t.id)}</span>
+            </div>
+          </a>
+        `).join("");
+      } catch (error) {
+        target.innerHTML = `
+          <div class="empty-state error-state">
+            <h2>Unable to load tournaments</h2>
+            <p>${escapeHtml(error.message)}</p>
+          </div>
+        `;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>'"]/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;",
+        "'": "&#39;", '"': "&quot;"
+      }[c]));
+    }
+
+    loadTournaments();
+  </script>
+</body>
+</html>

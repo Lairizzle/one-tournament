@@ -1,0 +1,4 @@
+---
+title: "Tournaments"
+layout: "tournament"
+---

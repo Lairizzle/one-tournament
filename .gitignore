@@ -1,0 +1,8 @@
+.wrangler/
+public/
+resources/_gen/
+.DS_Store
+
+# Local/build artifacts
+.hugo_build.lock
+functions.zip

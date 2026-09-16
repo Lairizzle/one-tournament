@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Tournament | One Tournament</title>
+
+  {{ $css := resources.Get "css/site.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}">
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="shell header-inner">
+
+    <a class="brand" href="/">
+      <span class="brand-mark">OT</span>
+
+      <span>
+        <strong>ONE TOURNAMENT</strong>
+        <small>UO OUTLANDS</small>
+      </span>
+    </a>
+
+    <a class="header-link" href="/">
+      ALL TOURNAMENTS
+    </a>
+
+  </div>
+</header>
+
+<main class="shell page">
+
+  <div id="app">
+    <div class="loading-card">
+      Loading tournament...
+    </div>
+  </div>
+
+</main>
+
+<script>
+
+const tournamentId =
+  Number(
+    new URLSearchParams(location.search).get("id")
+  );
+
+const app =
+  document.getElementById("app");
+
+
+async function api(path) {
+
+  const response =
+    await fetch(path);
+
+  let data;
+
+  try {
+
+    data =
+      await response.json();
+
+  } catch {
+
+    throw new Error(
+      "Invalid API response."
+    );
+
+  }
+
+  if (!response.ok) {
+
+    throw new Error(
+      data.error ||
+      `Request failed (${response.status})`
+    );
+
+  }
+
+  return data;
+}
+
+
+function esc(value) {
+
+  return String(value ?? "")
+    .replace(/[&<>'"]/g, character => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      "\"": "&quot;"
+    }[character]));
+
+}
+
+
+function num(value) {
+
+  return Number(
+    value || 0
+  ).toLocaleString();
+
+}
+
+
+function gold(value) {
+
+  return `${num(value)}g`;
+
+}
+
+
+function get(obj, paths, fallback = null) {
+
+  for (const path of paths) {
+
+    let value = obj;
+
+    for (const key of path.split(".")) {
+
+      value =
+        value?.[key];
+
+    }
+
+    if (
+      value !== undefined &&
+      value !== null
+    ) {
+
+      return value;
+
+    }
+
+  }
+
+  return fallback;
+
+}
+
+
+function statusClass(status) {
+
+  return String(
+    status || "pending"
+  )
+    .toLowerCase()
+    .replace(
+      /[^a-z0-9_-]/g,
+      "-"
+    );
+
+}
+
+
+function currentRound(rounds) {
+
+  for (const round of rounds) {
+
+    const active =
+      (round.matches || [])
+        .some(match =>
+          match.competitor_a &&
+          match.competitor_b &&
+          match.status !== "complete"
+        );
+
+    if (active) {
+
+      return round;
+
+    }
+
+  }
+
+  return (
+    rounds.find(round =>
+      (round.matches || [])
+        .some(match =>
+          match.status !== "complete"
+        )
+    )
+    ||
+    rounds[rounds.length - 1]
+    ||
+    null
+  );
+
+}
+
+
+function competitorName(competitor) {
+
+  return competitor?.name || "TBD";
+
+}
+
+
+function matchCard(match, odds) {
+
+  const a =
+    match.competitor_a;
+
+  const b =
+    match.competitor_b;
+
+  const winner =
+    Number(match.winner_id);
+
+  const aWinner =
+    a &&
+    Number(a.id) === winner;
+
+  const bWinner =
+    b &&
+    Number(b.id) === winner;
+
+  const open =
+    Boolean(match.betting_open) &&
+    Boolean(a && b) &&
+    match.status !== "complete";
+
+
+  const oa =
+    odds?.competitor_a || {};
+
+  const ob =
+    odds?.competitor_b || {};
+
+
+  const total =
+    Number(
+      odds?.total_pool ??
+      odds?.total ??
+      0
+    );
+
+
+  /*
+   * The payout pool is always 90% of
+   * the CURRENT betting pool.
+   */
+  const payout =
+    Math.floor(
+      total * 0.90
+    );
+
+
+  let betting = "";
+
+
+  if (open) {
+
+    betting = `
+
+      <div class="match-betting">
+
+        <div class="betting-head">
+
+          <span>
+            LIVE BETTING
+          </span>
+
+          <span class="live-dot">
+            ● OPEN
+          </span>
+
+        </div>
+
+
+        <div class="odds-row">
+
+          <div class="odds-card">
+
+            <span class="odds-name">
+              ${esc(
+                oa.name ||
+                a.name
+              )}
+            </span>
+
+            <strong>
+              ${
+                oa.odds != null
+                  ? Number(
+                      oa.odds
+                    ).toFixed(2) + "x"
+                  : "—"
+              }
+            </strong>
+
+            <small>
+              ${gold(
+                oa.pool || 0
+              )}
+              wagered
+            </small>
+
+          </div>
+
+
+          <div class="odds-card">
+
+            <span class="odds-name">
+              ${esc(
+                ob.name ||
+                b.name
+              )}
+            </span>
+
+            <strong>
+              ${
+                ob.odds != null
+                  ? Number(
+                      ob.odds
+                    ).toFixed(2) + "x"
+                  : "—"
+              }
+            </strong>
+
+            <small>
+              ${gold(
+                ob.pool || 0
+              )}
+              wagered
+            </small>
+
+          </div>
+
+        </div>
+
+
+        <div class="pool-line">
+
+          <span>
+            Total pool
+            <b>
+              ${gold(total)}
+            </b>
+          </span>
+
+          <span>
+            90% payout
+            <b>
+              ${gold(payout)}
+            </b>
+          </span>
+
+        </div>
+
+      </div>
+
+    `;
+
+  } else if (
+    match.status === "complete"
+  ) {
+
+    betting = `
+
+      <div class="match-result">
+
+        <span>
+          MATCH COMPLETE
+        </span>
+
+        ${
+          aWinner || bWinner
+            ? `
+              <strong>
+                ${esc(
+                  (aWinner ? a : b).name
+                )}
+                advances
+              </strong>
+            `
+            : ""
+        }
+
+      </div>
+
+    `;
+
+  } else {
+
+    betting = `
+
+      <div class="match-result pending-result">
+
+        <span>
+          BETTING CLOSED
+        </span>
+
+        <strong>
+          Awaiting match
+        </strong>
+
+      </div>
+
+    `;
+
+  }
+
+
+  return `
+
+    <article class="match-card">
+
+      <div class="match-meta">
+
+        <span>
+          MATCH ${esc(
+            match.match_number
+          )}
+        </span>
+
+        <span class="match-status ${
+          statusClass(match.status)
+        }">
+          ${esc(
+            match.status ||
+            "pending"
+          )}
+        </span>
+
+      </div>
+
+
+      <div class="fighter ${
+        aWinner
+          ? "winner"
+          : ""
+      }">
+
+        <div>
+
+          <span class="fighter-name">
+
+            ${esc(
+              competitorName(a)
+            )}
+
+          </span>
+
+          ${
+            aWinner
+              ? `
+                <span class="winner-label">
+                  WINNER
+                </span>
+              `
+              : ""
+          }
+
+        </div>
+</div>
+
+
+      <div class="vs">
+        VS
+      </div>
+
+
+      <div class="fighter ${
+        bWinner
+          ? "winner"
+          : ""
+      }">
+
+        <div>
+
+          <span class="fighter-name">
+
+            ${esc(
+              competitorName(b)
+            )}
+
+          </span>
+
+          ${
+            bWinner
+              ? `
+                <span class="winner-label">
+                  WINNER
+                </span>
+              `
+              : ""
+          }
+
+        </div>
+</div>
+
+
+      ${
+        !a || !b
+          ? `
+            <div class="bye-label">
+              BYE / WAITING FOR ADVANCEMENT
+            </div>
+          `
+          : ""
+      }
+
+
+      ${betting}
+
+    </article>
+
+  `;
+
+}
+
+
+async function loadMatchOdds(matches) {
+
+  const results =
+    await Promise.all(
+
+      matches.map(
+        async match => {
+
+          if (
+            !match.betting_open ||
+            !match.competitor_a ||
+            !match.competitor_b ||
+            match.status === "complete"
+          ) {
+
+            return [
+              match.id,
+              null
+            ];
+
+          }
+
+
+          try {
+
+            return [
+              match.id,
+              await api(
+                `/api/matches/${match.id}/odds`
+              )
+            ];
+
+          } catch {
+
+            return [
+              match.id,
+              null
+            ];
+
+          }
+
+        }
+      )
+
+    );
+
+
+  return new Map(results);
+
+}
+
+
+async function load() {
+
+  if (!tournamentId) {
+
+    throw new Error(
+      "No tournament selected."
+    );
+
+  }
+
+
+  const summary =
+    await api(
+      `/api/tournaments/${tournamentId}/summary`
+    );
+
+
+  const bracket =
+    await api(
+      `/api/tournaments/${tournamentId}/bracket`
+    );
+
+
+  const tournament =
+    summary.tournament || {};
+
+
+  const rounds =
+    bracket.rounds || [];
+
+
+  const activeRound =
+    currentRound(rounds);
+
+
+  const matches =
+    rounds.flatMap(
+      round =>
+        round.matches || []
+    );
+
+
+  const oddsMap =
+    await loadMatchOdds(matches);
+
+
+  const totalMatches =
+    Number(
+      get(
+        summary,
+        [
+          "matches.total",
+          "match_count",
+          "total_matches"
+        ],
+        matches.length
+      )
+    );
+
+
+  const completed =
+    Number(
+      get(
+        summary,
+        [
+          "matches.completed",
+          "completed_matches"
+        ],
+        matches.filter(
+          match =>
+            match.status === "complete"
+        ).length
+      )
+    );
+
+
+  const openMatches =
+    Number(
+      get(
+        summary,
+        [
+          "matches.betting_open",
+          "betting_open"
+        ],
+        matches.filter(
+          match =>
+            match.betting_open
+        ).length
+      )
+    );
+
+
+  /*
+   * Always use the CURRENT total wagered.
+   */
+  const totalWagered =
+    Number(
+      get(
+        summary,
+        [
+          "betting.total_wagered",
+          "total_wagered",
+          "total_pool"
+        ],
+        0
+      )
+    );
+
+
+  /*
+   * Never use the settlement record for
+   * these live tournament statistics.
+   */
+  const tournamentCut =
+    Math.floor(
+      totalWagered * 0.10
+    );
+
+
+  const payoutPool =
+    Math.floor(
+      totalWagered * 0.90
+    );
+
+
+  const bettors =
+    Number(
+      get(
+        summary,
+        [
+          "betting.bettor_count",
+          "bettor_count",
+          "bettors"
+        ],
+        0
+      )
+    );
+
+
+  const champion =
+    get(
+      summary,
+      [
+        "champion",
+        "tournament.champion"
+      ],
+      null
+    );
+
+
+  app.innerHTML = `
+
+    <section class="tournament-hero">
+
+      <div class="hero-main">
+
+        <div class="kicker">
+          ${esc(
+            tournament.status ||
+            "TOURNAMENT"
+          )}
+        </div>
+
+
+        <h1>
+          ${esc(
+            tournament.name ||
+            "Tournament"
+          )}
+        </h1>
+
+
+        <p>
+          ${esc(
+            tournament.description ||
+            ""
+          )}
+        </p>
+
+      </div>
+
+
+      <div class="round-banner">
+
+        <span>
+          CURRENT ROUND
+        </span>
+
+        <strong>
+          ${esc(
+            activeRound?.name ||
+            "Bracket not started"
+          )}
+        </strong>
+
+      </div>
+
+
+      ${
+        champion
+          ? `
+            <div class="champion-banner">
+
+              <span>
+                TOURNAMENT CHAMPION
+              </span>
+
+              <strong>
+                ⚔
+                ${esc(
+                  champion.name ||
+                  champion
+                )}
+              </strong>
+
+            </div>
+          `
+          : ""
+      }
+
+    </section>
+
+
+    <section class="stats-grid">
+
+      <div class="stat-card featured">
+
+        <span>
+          TOTAL BETTING POOL
+        </span>
+
+        <strong>
+          ${gold(
+            totalWagered
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <span>
+          90% PAYOUT POOL
+        </span>
+
+        <strong>
+          ${gold(
+            payoutPool
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <span>
+          TOURNAMENT CUT
+        </span>
+
+        <strong>
+          ${gold(
+            tournamentCut
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <span>
+          BETTORS
+        </span>
+
+        <strong>
+          ${num(
+            bettors
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <span>
+          COMPETITORS
+        </span>
+
+        <strong>
+          ${num(
+            get(
+              summary,
+              [
+                "competitors.count",
+                "competitor_count"
+              ],
+              0
+            )
+          )}
+        </strong>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <span>
+          MATCHES
+        </span>
+
+        <strong>
+          ${completed}
+          /
+          ${totalMatches}
+        </strong>
+
+      </div>
+
+
+      <div class="stat-card">
+
+        <span>
+          BETTING OPEN
+        </span>
+
+        <strong>
+          ${num(
+            openMatches
+          )}
+        </strong>
+
+      </div>
+
+    </section>
+
+
+    <section class="section">
+
+      <div class="section-heading">
+
+        <div>
+
+          <div class="kicker">
+            LIVE ACTION
+          </div>
+
+          <h2>
+            Betting Board
+          </h2>
+
+        </div>
+
+
+        <span class="refresh-label">
+          UPDATES AUTOMATICALLY
+        </span>
+
+      </div>
+
+
+      <div class="live-matches">
+
+        ${
+          matches.filter(
+            match =>
+              match.betting_open &&
+              match.competitor_a &&
+              match.competitor_b &&
+              match.status !== "complete"
+          )
+          .map(
+            match =>
+              matchCard(
+                match,
+                oddsMap.get(match.id)
+              )
+          )
+          .join("")
+          ||
+          `
+            <div class="empty-state compact">
+
+              <h3>
+                No live betting matches
+              </h3>
+
+              <p>
+                Betting will appear here when
+                a match is opened.
+              </p>
+
+            </div>
+          `
+        }
+
+      </div>
+
+    </section>
+
+
+    <section class="section">
+
+      <div class="section-heading">
+
+        <div>
+
+          <div class="kicker">
+            TOURNAMENT
+          </div>
+
+          <h2>
+            Bracket
+          </h2>
+
+        </div>
+
+      </div>
+
+
+      <div class="bracket">
+
+        ${
+          rounds.length
+
+            ? rounds.map(
+                round => `
+
+                  <div class="bracket-round">
+
+                    <div class="round-heading">
+
+                      <span>
+                        ${esc(
+                          round.name
+                        )}
+                      </span>
+
+                      <small>
+                        ${
+                          (round.matches || [])
+                            .length
+                        }
+                        MATCHES
+                      </small>
+
+                    </div>
+
+
+                    ${
+                      (round.matches || [])
+                        .map(
+                          match =>
+                            matchCard(
+                              match,
+                              oddsMap.get(
+                                match.id
+                              )
+                            )
+                        )
+                        .join("")
+                    }
+
+                  </div>
+
+                `
+              ).join("")
+
+            : `
+              <div class="empty-state compact">
+
+                <h3>
+                  Bracket not generated
+                </h3>
+
+                <p>
+                  The tournament administrator
+                  has not generated the bracket yet.
+                </p>
+
+              </div>
+            `
+        }
+
+      </div>
+
+    </section>
+
+  `;
+
+
+  /*
+   * Refresh the public state every 30 seconds.
+   */
+  setTimeout(
+    load,
+    30000
+  );
+
+}
+
+
+load().catch(
+  error => {
+
+    app.innerHTML = `
+
+      <div class="empty-state error-state">
+
+        <h1>
+          Tournament unavailable
+        </h1>
+
+        <p>
+          ${esc(
+            error.message
+          )}
+        </p>
+
+        <a
+          class="button"
+          href="/"
+        >
+          ← Back to tournaments
+        </a>
+
+      </div>
+
+    `;
+
+  }
+);
+
+</script>
+
+</body>
+</html>
