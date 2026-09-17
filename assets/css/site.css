@@ -154,6 +154,30 @@ h1,h2,h3,p { margin-top: 0; }
 .error-state { border-color:var(--red); }
 .button { display:inline-block; margin-top:20px; padding:10px 15px; border:1px solid var(--gold); color:var(--gold-light); }
 
+.match.pending {
+  border-color: color-mix(
+    in srgb,
+    var(--accent) 45%,
+    var(--border)
+  );
+}
+
+.match.completed {
+  border-color: color-mix(
+    in srgb,
+    var(--green) 45%,
+    var(--border)
+  );
+}
+
+.match.completed .match-status {
+  color: var(--green);
+}
+
+.match.pending .match-status {
+  color: var(--accent);
+}
+
 /* Admin */
 main:not(.shell) { max-width:1450px; margin:0 auto; padding:30px 18px 80px; }
 main:not(.shell) > h1 { font-size:40px; color:var(--gold-light); }
