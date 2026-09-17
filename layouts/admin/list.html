@@ -4,50 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin | One Tournament</title>
-<style>
-:root{--bg:#15110e;--panel:#211a14;--panel2:#2b2119;--line:#56432d;--gold:#c9a227;--cream:#e8dbb8;--muted:#a89a7a;--red:#8b302b;--green:#52683c}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at top,#302317 0,#15110e 50%);color:var(--cream);font-family:Georgia,serif}
-main{max-width:1450px;margin:auto;padding:30px 18px 80px}
-h1,h2,h3{color:var(--gold)}
-h1{font-size:40px}
-.panel{background:rgba(33,26,20,.96);border:1px solid var(--line);border-radius:9px;padding:20px;margin:16px 0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
-.card{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:14px}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
-form{display:grid;gap:10px;max-width:650px}
-label{display:grid;gap:5px;color:var(--muted)}
-input,textarea,select,button{font:inherit;border:1px solid var(--line);border-radius:5px;padding:9px 11px}
-input,textarea,select{background:#100d0b;color:var(--cream)}
-button{background:var(--gold);color:#15110e;font-weight:bold;cursor:pointer}
-button.secondary{background:var(--panel2);color:var(--cream)}
-button.danger{background:var(--red);color:#fff}
-button.good{background:var(--green);color:#fff}
-button:disabled{opacity:.45;cursor:not-allowed}
-.hidden{display:none!important}
-.muted{color:var(--muted)}
-.status{color:var(--gold);text-transform:uppercase;font-size:12px;letter-spacing:.1em}
-.notice{padding:12px;border-radius:6px;margin:10px 0;background:#2a2119;border:1px solid var(--line)}
-.error{border-color:var(--red);color:#f0b6ad}
-.success{border-color:var(--green)}
-.match{margin-bottom:10px}
-.fighter{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #423326}
-.winner{color:var(--gold);font-weight:bold}
-.match-payouts{margin-top:14px;padding:14px;border:1px solid #423326;border-radius:8px;background:rgba(0,0,0,.12)}
-.payout-header{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px;color:var(--gold)}
-.payout-list{border-top:1px solid #423326}
-.payout-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid #423326}
-.payout-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
-.payout-summary>div{display:flex;flex-direction:column;gap:3px}
-.payout-summary strong{font-size:1.05rem}
-
-.small{font-size:13px}
-.inline-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
-.scroll{overflow:auto}
-.stat strong{font-size:20px}
-.login{max-width:500px;margin:80px auto}
-.empty{padding:18px;color:var(--muted);border:1px dashed var(--line);border-radius:7px}
-</style>
+{{ $css := resources.Get "css/site.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}">
 </head>
 
 <body>
@@ -79,7 +37,7 @@ Password
 
 <div class="row">
 
-<div style="flex:1;min-width:260px">
+<div class="toolbar-grow">
 <label>
 Selected Tournament
 <select id="tournament-select"></select>
@@ -90,7 +48,7 @@ Selected Tournament
 Refresh
 </button>
 
-<a href="/" style="padding:10px 0;color:var(--gold)">
+<a href="/" class="public-link">
 Public Site
 </a>
 
@@ -132,7 +90,7 @@ Create Tournament
 
 <div id="summary" class="grid"></div>
 
-<form id="edit-tournament-form" style="margin-top:18px">
+<form id="edit-tournament-form" class="form-spaced">
 
 <label>
 Name
@@ -193,7 +151,7 @@ Add Competitor
 
 </form>
 
-<div id="competitors" style="margin-top:16px"></div>
+<div id="competitors" class="section-list"></div>
 
 </section>
 
@@ -217,7 +175,7 @@ Process Byes
 
 </div>
 
-<div id="bracket" class="grid" style="margin-top:16px"></div>
+<div id="bracket" class="grid section-list"></div>
 
 </section>
 
@@ -238,7 +196,7 @@ Add Bettor
 
 </form>
 
-<div id="bettors" class="grid" style="margin-top:16px"></div>
+<div id="bettors" class="grid section-list"></div>
 
 </section>
 
@@ -276,7 +234,7 @@ Record Wager
 
 <div id="wager-odds" class="notice muted"></div>
 
-<div id="wagers" style="margin-top:14px"></div>
+<div id="wagers" class="section-list-sm"></div>
 
 </section>
 
@@ -712,7 +670,7 @@ async function loadCompetitors(){
     ?competitors.map(c=>`
       <div class="competitor card">
 
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center">
+        <div class="item-row">
 
           <div>
             <strong>
@@ -1054,7 +1012,7 @@ function matchCard(m){
 
       </div>
 
-      <div class="status">
+      <div class="status status-${html(m.status)}">
 
         ${html(m.status)}
 
@@ -1703,15 +1661,7 @@ async function loadWagers(){
       rows.length
       ?rows.map(
         w=>`
-          <div
-            class="card"
-            style="
-              display:flex;
-              justify-content:space-between;
-              gap:12px;
-              align-items:center
-            "
-          >
+          <div class="card item-row">
 
             <span>
 
