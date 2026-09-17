@@ -1612,3 +1612,31 @@ main:not(.shell) .muted.small {
 .admin-match-card .match-payouts {
   margin-top: 16px;
 }
+
+/* ---------------------------------------------------------
+   Public match alignment
+   Keep public tournament cards visually identical to the
+   admin bracket cards: centered competitors and shared
+   semantic status colours.
+   --------------------------------------------------------- */
+
+.match-card .match-status.pending {
+  color: var(--blue-light);
+  border-color: rgba(113, 136, 153, 0.40);
+  background: var(--blue-soft);
+}
+
+.match-card .match-status.complete {
+  color: var(--green-light);
+  border-color: rgba(115, 150, 111, 0.45);
+  background: rgba(115, 150, 111, 0.075);
+}
+
+.match-card .fighter > div {
+  width: 100%;
+  text-align: center;
+}
+
+.match-card .fighter-name {
+  text-align: center;
+}

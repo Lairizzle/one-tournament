@@ -67,7 +67,15 @@
     }
 
     function statusClass(status) {
-      return String(status || "pending").toLowerCase().replace(/[^a-z0-9_-]/g, "-");
+      const value = String(status || "setup").toLowerCase();
+      return {
+        setup: "pending",
+        pending: "pending",
+        betting: "betting",
+        in_progress: "in_progress",
+        completed: "complete",
+        complete: "complete"
+      }[value] || "pending";
     }
 
     function currentRound(rounds) {
