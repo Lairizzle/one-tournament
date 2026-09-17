@@ -184,13 +184,13 @@ main:not(.shell) button:disabled { opacity:.45; cursor:not-allowed; }
   display:flex;
   justify-content:space-between;
   align-items:center;
-  min-height:52px;
-  padding:10px 12px;
+  min-height:60px;
+  padding:14px 16px;
   background:rgba(0,0,0,.12);
   border:1px solid transparent;
   border-radius:4px;
 }
-.match .fighter + .fighter { margin-top:4px; }
+.match .fighter + .fighter { margin-top:7px; }
 .match .fighter.winner {
   border-color:var(--gold);
   background:rgba(180,154,98,.08);
@@ -221,7 +221,7 @@ main:not(.shell) button:disabled { opacity:.45; cursor:not-allowed; }
 .status-setup { border-color:var(--border-light); color:var(--muted); }
 .status-betting { border-color:var(--green); color:var(--green-light); background:rgba(111,141,104,.09); }
 .status-in_progress { border-color:var(--gold); color:var(--gold-light); background:rgba(180,154,98,.09); }
-.status-completed { border-color:var(--green); color:var(--green-light); background:rgba(111,141,104,.15); font-weight:bold; }
+.status-completed { border-color:var(--green); color:var(--green-light); background:rgba(111,141,104,.15); font-weight:bold; margin-top:10px; }
 .status-completed::before { content:"✓ "; }
 .match-payouts { margin-top:14px; padding:16px; border:1px solid var(--green); border-left:4px solid var(--green); border-radius:6px; background:rgba(111,141,104,.10); }
 .payout-header { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px; color:var(--green-light); }
