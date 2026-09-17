@@ -46,7 +46,7 @@ export async function onRequestPost({ request, env }) {
   `).bind(competitorId, matchId).first();
   const totalAfter = Number(pools.total_pool) + amount;
   const sideAfter = Number(pools.side_pool) + amount;
-  const oddsAtBet = (totalAfter * 0.9) / sideAfter;
+  const oddsAtBet = Math.max(1, (totalAfter * 0.9) / sideAfter);
 
   const wager = await env.DB.prepare(`
     INSERT INTO wagers (match_id, bettor_id, competitor_id, amount, odds_at_bet)
