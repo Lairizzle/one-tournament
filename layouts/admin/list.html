@@ -962,147 +962,120 @@ function matchCard(m){
   const a=m.competitor_a;
   const b=m.competitor_b;
 
-  const winner=
-    m.winner_id===a?.id
-      ?a?.name
-      :m.winner_id===b?.id
-        ?b?.name
-        :null;
+  const aWinner=Boolean(a && Number(m.winner_id)===Number(a.id));
+  const bWinner=Boolean(b && Number(m.winner_id)===Number(b.id));
+  const winner=aWinner?a:bWinner?b:null;
+
+  const statusLabel={
+    setup:"PENDING",
+    betting:"BETTING OPEN",
+    in_progress:"IN PROGRESS",
+    completed:"COMPLETED"
+  }[m.status]||String(m.status||"PENDING").replaceAll("_"," ").toUpperCase();
 
   return `
-    <div class="card match">
+    <article class="match-card match admin-match-card">
 
-      <div class="muted small">
-        Match ${m.match_number}
-      </div>
-
-      <div class="fighter ${
-        m.winner_id===a?.id
-          ?"winner"
-          :""
-      }">
-
-        <span>
-          ${html(a?.name||"BYE")}
+      <div class="match-meta">
+        <span>MATCH ${m.match_number}</span>
+        <span class="match-status ${m.status==='completed'?'complete':m.status==='betting'?'betting':m.status==='in_progress'?'in_progress':'pending'}">
+          ${html(statusLabel)}
         </span>
-
-        ${
-          m.winner_id===a?.id
-            ?"WIN"
-            :""
-        }
-
       </div>
 
-      <div class="fighter ${
-        m.winner_id===b?.id
-          ?"winner"
-          :""
-      }">
-
-        <span>
-          ${html(b?.name||"BYE")}
-        </span>
-
-        ${
-          m.winner_id===b?.id
-            ?"WIN"
-            :""
-        }
-
+      <div class="fighter ${aWinner ? "winner" : ""}">
+        <div>
+          <span class="fighter-name">${html(a?.name||"BYE")}</span>
+          ${aWinner ? '<span class="winner-label">WINNER</span>' : ""}
+        </div>
       </div>
 
-      <div class="status status-${html(m.status)}">
+      <div class="vs">VS</div>
 
-        ${html(m.status)}
-
-        ${
-          m.betting_open
-            ?" · betting open"
-            :""
-        }
-
-        ${
-          winner
-            ?` · ${html(winner)}`
-            :""
-        }
-
+      <div class="fighter ${bWinner ? "winner" : ""}">
+        <div>
+          <span class="fighter-name">${html(b?.name||"BYE")}</span>
+          ${bWinner ? '<span class="winner-label">WINNER</span>' : ""}
+        </div>
       </div>
 
-      <div class="inline-actions">
+      ${!a || !b ? '<div class="bye-label">BYE / WAITING FOR ADVANCEMENT</div>' : ""}
 
-        ${
-          a &&
-          b &&
-          m.status!=="completed"
-          ?`
-            <button
-              type="button"
-              class="secondary"
-              onclick="toggleBetting(
-                ${m.id},
-                ${!m.betting_open}
-              )"
-            >
+      <div class="admin-match-actions">
+        <div class="inline-actions">
+
+          ${
+            a &&
+            b &&
+            m.status!=="completed"
+            ?`
+              <button
+                type="button"
+                class="secondary"
+                onclick="toggleBetting(
+                  ${m.id},
+                  ${!m.betting_open}
+                )"
+              >
+                ${
+                  m.betting_open
+                    ?"Close Betting"
+                    :"Open Betting"
+                }
+              </button>
+
+              <button
+                type="button"
+                onclick="setWinner(
+                  ${m.id},
+                  ${a.id}
+                )"
+              >
+                ${html(a.name)} Wins
+              </button>
+
+              <button
+                type="button"
+                onclick="setWinner(
+                  ${m.id},
+                  ${b.id}
+                )"
+              >
+                ${html(b.name)} Wins
+              </button>
+            `
+            :""
+          }
+
+          ${
+            m.status==="completed"
+            ?`
+              <button
+                type="button"
+                class="danger"
+                onclick="undoWinner(${m.id})"
+              >
+                Undo Winner
+              </button>
+
               ${
-                m.betting_open
-                  ?"Close Betting"
-                  :"Open Betting"
+                m.settlement_id
+                  ?""
+                  :`
+                    <button
+                      type="button"
+                      class="secondary"
+                      onclick="settleMatch(${m.id})"
+                    >
+                      Settle
+                    </button>
+                  `
               }
-            </button>
+            `
+            :""
+          }
 
-            <button
-              type="button"
-              onclick="setWinner(
-                ${m.id},
-                ${a.id}
-              )"
-            >
-              ${html(a.name)} Wins
-            </button>
-
-            <button
-              type="button"
-              onclick="setWinner(
-                ${m.id},
-                ${b.id}
-              )"
-            >
-              ${html(b.name)} Wins
-            </button>
-          `
-          :""
-        }
-
-        ${
-          m.status==="completed"
-          ?`
-            <button
-              type="button"
-              class="danger"
-              onclick="undoWinner(${m.id})"
-            >
-              Undo Winner
-            </button>
-
-            ${
-              m.settlement_id
-                ?""
-                :`
-                  <button
-                    type="button"
-                    class="secondary"
-                    onclick="settleMatch(${m.id})"
-                  >
-                    Settle
-                  </button>
-                `
-            }
-          `
-          :""
-        }
-
+        </div>
       </div>
 
       ${
@@ -1117,7 +1090,7 @@ function matchCard(m){
           :""
       }
 
-    </div>
+    </article>
   `;
 }
 
