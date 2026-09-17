@@ -178,6 +178,22 @@ h1,h2,h3,p { margin-top: 0; }
   color: var(--accent);
 }
 
+/* Detailed tournament page match status */
+
+.match-card .status.pending,
+.match-card .match-status.pending {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+}
+
+.match-card .status.completed,
+.match-card .match-status.completed {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--green) 35%, var(--border));
+}
+
 /* Admin */
 main:not(.shell) { max-width:1450px; margin:0 auto; padding:30px 18px 80px; }
 main:not(.shell) > h1 { font-size:40px; color:var(--gold-light); }
