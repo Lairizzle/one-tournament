@@ -35,6 +35,10 @@
   --shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
 }
 
+/* =========================================================
+   Base
+   ========================================================= */
+
 * {
   box-sizing: border-box;
 }
@@ -62,26 +66,6 @@ a {
   text-decoration: none;
 }
 
-/* =========================================================
-   Layout
-   ========================================================= */
-
-.shell {
-  width: min(1480px, calc(100% - 36px));
-  margin: 0 auto;
-}
-
-.page {
-  padding: 44px 0 100px;
-}
-
-.page-heading {
-  margin-bottom: 28px;
-}
-
-.page-heading h1,
-.page-heading h2,
-.page-heading h3,
 h1,
 h2,
 h3,
@@ -89,27 +73,26 @@ p {
   margin-top: 0;
 }
 
-.page-heading h1 {
-  margin: 8px 0;
-  color: var(--gold-light);
-  font-size: clamp(34px, 5vw, 52px);
+.hidden {
+  display: none !important;
 }
 
-.page-heading p {
+.muted {
   color: var(--muted);
 }
 
-.kicker {
-  color: var(--gold);
-  font-size: 10px;
-  font-weight: bold;
-  letter-spacing: 3px;
-  text-transform: uppercase;
+.small {
+  font-size: 13px;
 }
 
 /* =========================================================
-   Header
+   Site Header
    ========================================================= */
+
+.shell {
+  width: min(1480px, calc(100% - 36px));
+  margin: 0 auto;
+}
 
 .site-header {
   background: rgba(14, 15, 15, 0.96);
@@ -171,12 +154,45 @@ p {
 }
 
 /* =========================================================
+   General Page
+   ========================================================= */
+
+.page {
+  padding: 44px 0 100px;
+}
+
+.page-heading {
+  margin-bottom: 28px;
+}
+
+.kicker {
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.page-heading h1 {
+  margin: 8px 0;
+  color: var(--gold-light);
+  font-size: clamp(34px, 5vw, 52px);
+}
+
+.page-heading p {
+  color: var(--muted);
+}
+
+/* =========================================================
    Tournament List
    ========================================================= */
 
 .tournament-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(310px, 1fr)
+  );
   gap: 18px;
 }
 
@@ -236,7 +252,7 @@ p {
 }
 
 /* =========================================================
-   Status Pills
+   Tournament Status
    ========================================================= */
 
 .status {
@@ -250,28 +266,27 @@ p {
   text-transform: uppercase;
 }
 
-.status-betting {
-  color: var(--green-light);
-  border-color: var(--green);
-  background: rgba(111, 141, 104, 0.08);
-}
-
 .status-setup {
   color: var(--muted);
   border-color: var(--border-light);
 }
 
+.status-betting {
+  color: var(--green-light);
+  background: rgba(111, 141, 104, 0.08);
+  border-color: var(--green);
+}
+
 .status-in_progress {
   color: var(--gold-light);
-  border-color: var(--gold);
   background: rgba(180, 154, 98, 0.09);
+  border-color: var(--gold);
 }
 
 .status-completed {
-  margin-top: 10px;
   color: var(--green-light);
-  border-color: var(--green);
   background: rgba(111, 141, 104, 0.08);
+  border-color: var(--green);
   font-weight: bold;
 }
 
@@ -389,11 +404,6 @@ p {
   white-space: nowrap;
 }
 
-.stat strong {
-  color: var(--cream);
-  font-size: 20px;
-}
-
 /* =========================================================
    Sections
    ========================================================= */
@@ -420,14 +430,6 @@ p {
   color: var(--muted);
   font-size: 10px;
   letter-spacing: 1.5px;
-}
-
-.section-list {
-  margin-top: 16px;
-}
-
-.section-list-sm {
-  margin-top: 14px;
 }
 
 /* =========================================================
@@ -508,24 +510,27 @@ p {
   text-transform: uppercase;
 }
 
+/* Pending is intentionally quiet. */
 .match-status.pending {
-  color: var(--gold-light);
+  color: var(--muted);
   border-color: var(--border-light);
-  background: rgba(180, 154, 98, 0.04);
+  background: rgba(255, 255, 255, 0.015);
 }
 
+/* Completed gets a restrained green treatment. */
 .match-status.complete {
   color: var(--green-light);
-  border-color: var(--green);
   background: rgba(111, 141, 104, 0.08);
+  border-color: var(--green);
   font-weight: bold;
 }
 
+/* Open betting is the active state. */
 .match-status.open,
 .match-status.betting {
   color: var(--green-light);
-  border-color: var(--green);
   background: rgba(111, 141, 104, 0.07);
+  border-color: var(--green);
 }
 
 .fighter {
@@ -566,10 +571,10 @@ p {
 .vs {
   position: relative;
   z-index: 1;
-  display: grid;
-  place-items: center;
   width: 34px;
   height: 24px;
+  display: grid;
+  place-items: center;
   margin: -4px auto;
   background: var(--panel3);
   border: 1px solid var(--border);
@@ -656,8 +661,8 @@ p {
   gap: 10px;
   margin-top: 12px;
   padding-top: 12px;
-  color: var(--gold);
   border-top: 1px solid var(--border);
+  color: var(--gold);
   font-size: 11px;
   letter-spacing: 1px;
 }
@@ -719,13 +724,13 @@ p {
    Admin
    ========================================================= */
 
-main:not(.shell) {
+main {
   max-width: 1450px;
   margin: 0 auto;
   padding: 30px 18px 80px;
 }
 
-main:not(.shell) > h1 {
+main > h1 {
   color: var(--gold-light);
   font-size: 40px;
 }
@@ -755,82 +760,82 @@ main:not(.shell) > h1 {
   border-radius: 6px;
 }
 
-main:not(.shell) form {
+main form {
   display: grid;
   max-width: 650px;
   gap: 10px;
 }
 
-main:not(.shell) label {
+main label {
   display: grid;
   gap: 5px;
   color: var(--muted);
 }
 
-main:not(.shell) input,
-main:not(.shell) textarea,
-main:not(.shell) select,
-main:not(.shell) button {
+main input,
+main textarea,
+main select,
+main button {
   padding: 9px 11px;
   font: inherit;
   border: 1px solid var(--border);
   border-radius: 4px;
 }
 
-main:not(.shell) input,
-main:not(.shell) textarea,
-main:not(.shell) select {
+main input,
+main textarea,
+main select {
   color: var(--text);
   background: #111212;
 }
 
-main:not(.shell) input:focus,
-main:not(.shell) textarea:focus,
-main:not(.shell) select:focus {
+main input:focus,
+main textarea:focus,
+main select:focus {
   outline: 2px solid rgba(180, 154, 98, 0.35);
   outline-offset: 1px;
   border-color: var(--gold);
 }
 
-main:not(.shell) button {
+main button {
   color: #171714;
   background: var(--gold);
   font-weight: bold;
   cursor: pointer;
 }
 
-main:not(.shell) button:hover {
+main button:hover {
   background: var(--gold-light);
 }
 
-main:not(.shell) button.secondary {
+main button.secondary {
   color: var(--text);
   background: var(--panel3);
 }
 
-main:not(.shell) button.secondary:hover {
+main button.secondary:hover {
   color: var(--gold-light);
   border-color: var(--gold);
 }
 
-main:not(.shell) button.danger {
+main button.danger {
   color: #fff;
   background: var(--red);
   border-color: #b27068;
 }
 
-main:not(.shell) button.good {
+main button.good {
   color: #fff;
   background: var(--green);
 }
 
-main:not(.shell) button:disabled {
+main button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
 
 /* =========================================================
-   Admin Match Cards
+   Admin Bracket Matches
    ========================================================= */
 
 .match {
@@ -845,17 +850,38 @@ main:not(.shell) button:disabled {
   border-radius: 6px;
 }
 
-/* Keep admin state indicators deliberately subtle. */
-.match.status-completed {
-  border-color: rgba(111, 141, 104, 0.7);
+/*
+ * Admin matches stay deliberately neutral.
+ * State is shown with the status border rather than
+ * tinting the entire match card.
+ */
+
+.match:has(.status-completed) {
+  border-color: rgba(111, 141, 104, 0.55);
 }
+
+.match:has(.status-betting) {
+  border-color: rgba(111, 141, 104, 0.4);
+}
+
+.match:has(.status-in_progress) {
+  border-color: rgba(180, 154, 98, 0.45);
+}
+
+/*
+ * Competitor boxes.
+ *
+ * Names are centered and slightly larger so the fighters
+ * are the primary visual element of each match.
+ */
 
 .match .fighter {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 64px;
-  padding: 16px;
+  min-height: 62px;
+  margin: 0;
+  padding: 15px 16px;
   background: rgba(0, 0, 0, 0.12);
   border: 1px solid transparent;
   border-radius: 4px;
@@ -873,7 +899,7 @@ main:not(.shell) button:disabled {
 
 .match .fighter > span:first-child {
   color: var(--text);
-  font-size: 20px;
+  font-size: 19px;
   font-weight: bold;
   line-height: 1.25;
   text-align: center;
@@ -891,12 +917,51 @@ main:not(.shell) button:disabled {
 }
 
 /*
- * Extra breathing room between the competitor boxes
- * and the completed/pending status.
+ * Give the status room to breathe beneath the
+ * second competitor.
  */
-.match .match-status,
-.match .status-completed {
-  margin-top: 13px;
+
+.match > .status {
+  margin-top: 14px;
+}
+
+/*
+ * Keep admin status indicators restrained.
+ */
+
+.match > .status.status-setup {
+  color: var(--muted);
+  background: transparent;
+  border-color: var(--border-light);
+}
+
+.match > .status.status-betting {
+  color: var(--green-light);
+  background: rgba(111, 141, 104, 0.04);
+  border-color: rgba(111, 141, 104, 0.65);
+}
+
+.match > .status.status-in_progress {
+  color: var(--gold-light);
+  background: rgba(180, 154, 98, 0.04);
+  border-color: rgba(180, 154, 98, 0.65);
+}
+
+.match > .status.status-completed {
+  color: var(--green-light);
+  background: transparent;
+  border-color: rgba(111, 141, 104, 0.7);
+}
+
+/* =========================================================
+   Admin Actions
+   ========================================================= */
+
+.inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
 }
 
 /* =========================================================
@@ -944,7 +1009,10 @@ main:not(.shell) button:disabled {
 
 .payout-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(
+    3,
+    minmax(0, 1fr)
+  );
   gap: 10px;
   margin-top: 12px;
 }
@@ -964,16 +1032,8 @@ main:not(.shell) button:disabled {
 }
 
 /* =========================================================
-   Utility
+   Admin Utility
    ========================================================= */
-
-.hidden {
-  display: none !important;
-}
-
-.muted {
-  color: var(--muted);
-}
 
 .notice {
   margin: 10px 0;
@@ -995,10 +1055,6 @@ main:not(.shell) button:disabled {
   color: var(--green-light);
   background: rgba(111, 141, 104, 0.08);
   border-color: var(--green);
-}
-
-.small {
-  font-size: 13px;
 }
 
 .login {
@@ -1026,6 +1082,14 @@ main:not(.shell) button:disabled {
 
 .form-spaced {
   margin-top: 18px;
+}
+
+.section-list {
+  margin-top: 16px;
+}
+
+.section-list-sm {
+  margin-top: 14px;
 }
 
 .item-row {
