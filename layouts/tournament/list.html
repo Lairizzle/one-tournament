@@ -81,11 +81,11 @@
     function currentRound(rounds) {
       for (const round of rounds) {
         const active = (round.matches || []).some(m =>
-          m.competitor_a && m.competitor_b && m.status !== "complete"
+          m.competitor_a && m.competitor_b && (m.status !== "complete" && m.status !== "completed")
         );
         if (active) return round;
       }
-      return rounds.find(r => (r.matches || []).some(m => m.status !== "complete"))
+      return rounds.find(r => (r.matches || []).some(m => (m.status !== "complete" && m.status !== "completed")))
         || rounds[rounds.length - 1]
         || null;
     }
@@ -101,54 +101,134 @@
 
       const aWinner = a && Number(a.id) === winner;
       const bWinner = b && Number(b.id) === winner;
+      const complete = String(match.status || "").toLowerCase() === "completed" ||
+        String(match.status || "").toLowerCase() === "complete";
 
       const open = Boolean(match.betting_open) &&
         Boolean(a && b) &&
-        match.status !== "complete";
+        !complete;
 
       const oa = odds?.competitor_a || {};
       const ob = odds?.competitor_b || {};
-      const total = Number(odds?.total_pool ?? odds?.total ?? 0);
-      const payout = Math.floor(total * 0.90);
+      const betting = match.betting || {};
 
-      let betting = "";
+      const pendingTotal = Number(
+        betting.pending_total_pool ?? odds?.total_pool ?? odds?.total ?? 0
+      );
+      const pendingA = Number(
+        betting.pending_a_pool ?? oa.pool ?? 0
+      );
+      const pendingB = Number(
+        betting.pending_b_pool ?? ob.pool ?? 0
+      );
 
-      if (open) {
-        betting = `
-          <div class="match-betting">
-            <div class="betting-head">
-              <span>LIVE BETTING</span>
-              <span class="live-dot">● OPEN</span>
-            </div>
+      const settled = Boolean(betting.settlement_id);
+      const finalTotal = settled
+        ? Number(betting.settled_total_pool || 0)
+        : pendingTotal;
+      const finalPayout = Number(betting.settled_payout_pool || 0);
+      const finalCut = Number(betting.settled_tournament_cut || 0);
 
-            <div class="odds-row">
-              <div class="odds-card">
-                <span class="odds-name">${esc(oa.name || a.name)}</span>
-                <strong>${oa.odds != null ? Number(oa.odds).toFixed(2) + "x" : "—"}</strong>
-                <small>${gold(oa.total || 0)} wagered</small>
+      let bettingInfo = "";
+
+      if (a && b) {
+        if (open) {
+          const payout = Math.floor(pendingTotal * 0.90);
+
+          bettingInfo = `
+            <div class="match-betting">
+              <div class="betting-head">
+                <span>LIVE BETTING</span>
+                <span class="live-dot">● OPEN</span>
               </div>
-              <div class="odds-card">
-                <span class="odds-name">${esc(ob.name || b.name)}</span>
-                <strong>${ob.odds != null ? Number(ob.odds).toFixed(2) + "x" : "—"}</strong>
-                <small>${gold(ob.total || 0)} wagered</small>
+
+              <div class="odds-row">
+                <div class="odds-card">
+                  <span class="odds-name">${esc(oa.name || a.name)}</span>
+                  <strong>${oa.odds != null ? Number(oa.odds).toFixed(2) + "x" : "—"}</strong>
+                  <small>${gold(pendingA)} wagered</small>
+                </div>
+                <div class="odds-card">
+                  <span class="odds-name">${esc(ob.name || b.name)}</span>
+                  <strong>${ob.odds != null ? Number(ob.odds).toFixed(2) + "x" : "—"}</strong>
+                  <small>${gold(pendingB)} wagered</small>
+                </div>
+              </div>
+
+              <div class="pool-line">
+                <span>Total pool <b>${gold(pendingTotal)}</b></span>
+                <span>90% payout <b>${gold(payout)}</b></span>
               </div>
             </div>
+          `;
+        } else if (complete) {
+          bettingInfo = `
+            <div class="match-betting match-betting-final">
+              <div class="betting-head">
+                <span>BETTING RESULT</span>
+                <span>${settled ? "● SETTLED" : "● CLOSED"}</span>
+              </div>
 
-            <div class="pool-line">
-              <span>Total pool <b>${gold(total)}</b></span>
-              <span>90% payout <b>${gold(payout)}</b></span>
+              <div class="pool-line">
+                <span>Final pool <b>${gold(finalTotal)}</b></span>
+                ${settled
+                  ? `<span>Paid out <b>${gold(finalPayout)}</b></span>`
+                  : `<span>No settlement recorded</span>`
+                }
+              </div>
+
+              ${
+                settled
+                  ? `<div class="pool-line">
+                       <span>Tournament cut <b>${gold(finalCut)}</b></span>
+                     </div>`
+                  : ""
+              }
             </div>
-          </div>
-        `;
-      } else if (match.status === "complete") {
-        betting = `
+          `;
+        } else {
+          bettingInfo = `
+            <div class="match-betting match-betting-closed">
+              <div class="betting-head">
+                <span>BETTING POOL</span>
+                <span>${pendingTotal > 0 ? "● CLOSED" : "● NO BETS"}</span>
+              </div>
+
+              <div class="odds-row">
+                <div class="odds-card">
+                  <span class="odds-name">${esc(a.name)}</span>
+                  <strong>${gold(pendingA)}</strong>
+                  <small>wagered</small>
+                </div>
+                <div class="odds-card">
+                  <span class="odds-name">${esc(b.name)}</span>
+                  <strong>${gold(pendingB)}</strong>
+                  <small>wagered</small>
+                </div>
+              </div>
+
+              <div class="pool-line">
+                <span>Total pool <b>${gold(pendingTotal)}</b></span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      let result = "";
+
+      if (complete) {
+        result = `
           <div class="match-result">
             <span>MATCH COMPLETE</span>
-            ${aWinner || bWinner ? `<strong>${esc((aWinner ? a : b).name)} advances</strong>` : ""}
+            ${aWinner || bWinner
+              ? `<strong>${esc((aWinner ? a : b).name)} advances</strong>`
+              : ""
+            }
           </div>
         `;
-      } else {
-        betting = `
+      } else if (!open) {
+        result = `
           <div class="match-result pending-result">
             <span>BETTING CLOSED</span>
             <strong>Awaiting match</strong>
@@ -180,7 +260,8 @@
           </div>
 
           ${!a || !b ? '<div class="bye-label">BYE / WAITING FOR ADVANCEMENT</div>' : ""}
-          ${betting}
+          ${result}
+          ${bettingInfo}
         </article>
       `;
     }
@@ -197,7 +278,7 @@
       const matches = rounds.flatMap(r => r.matches || []);
 
       const oddsEntries = await Promise.all(matches.map(async match => {
-        if (!match.betting_open || !match.competitor_a || !match.competitor_b || match.status === "complete") {
+        if (!match.betting_open || !match.competitor_a || !match.competitor_b || (match.status === "complete" || match.status === "completed")) {
           return [match.id, null];
         }
         try {
@@ -215,7 +296,7 @@
 
       const completed = Number(get(summary, [
         "matches.completed", "completed_matches"
-      ], matches.filter(m => m.status === "complete").length));
+      ], matches.filter(m => (m.status === "complete" || m.status === "completed")).length));
 
       const openMatches = Number(get(summary, [
         "matches.betting_open", "betting_open"
@@ -299,7 +380,7 @@
 
           <div class="live-matches">
             ${matches.filter(m =>
-              m.betting_open && m.competitor_a && m.competitor_b && m.status !== "complete"
+              m.betting_open && m.competitor_a && m.competitor_b && (m.status !== "complete" && m.status !== "completed")
             ).map(m => matchCard(m, oddsMap.get(m.id))).join("") || `
               <div class="empty-state compact">
                 <h3>No live betting matches</h3>

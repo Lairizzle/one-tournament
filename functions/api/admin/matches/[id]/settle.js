@@ -49,9 +49,9 @@ export async function onRequestPost({ request, params, env }) {
   );
   const losingPool = totalPool - winningPool;
 
-  if (winningPool <= 0) {
+  if (winningPool <= 0 && wagers.length > 0) {
     return Response.json({
-      error: "There are no pending winning bets to settle"
+      error: "There are pending bets, but none are on the winning competitor"
     }, { status: 400 });
   }
 

@@ -865,6 +865,7 @@ $("process-byes").addEventListener(
 async function loadBracket(){
 
   const previousMatchId=$("wager-match").value;
+  const previousCompetitorId=$("wager-competitor").value;
 
   const d=await fetch(
     `/api/tournaments/${tournamentId}/bracket`
@@ -925,6 +926,16 @@ async function loadBracket(){
   }
 
   updateWagerCompetitors();
+
+  if(
+    previousCompetitorId &&
+    [...$("wager-competitor").options].some(
+      option=>String(option.value)===String(previousCompetitorId)
+    )
+  ){
+    $("wager-competitor").value=previousCompetitorId;
+    loadOdds();
+  }
 
   if(select.value){
     await loadWagers();
@@ -1000,6 +1011,8 @@ function matchCard(m){
       </div>
 
       ${!a || !b ? '<div class="bye-label">BYE / WAITING FOR ADVANCEMENT</div>' : ""}
+
+      ${renderAdminBettingInfo(m)}
 
       <div class="admin-match-actions">
         <div class="inline-actions">
@@ -1091,6 +1104,70 @@ function matchCard(m){
       }
 
     </article>
+  `;
+}
+
+function renderAdminBettingInfo(m){
+  const a=m.competitor_a;
+  const b=m.competitor_b;
+
+  if(!a || !b) return "";
+
+  const betting=m.betting||{};
+  const pendingTotal=Number(betting.pending_total_pool||0);
+  const pendingA=Number(betting.pending_a_pool||0);
+  const pendingB=Number(betting.pending_b_pool||0);
+  const settledTotal=Number(betting.settled_total_pool||0);
+  const settledPayout=Number(betting.settled_payout_pool||0);
+  const settledCut=Number(betting.settled_tournament_cut||0);
+  const hasSettlement=Boolean(betting.settlement_id);
+
+  const total=hasSettlement ? settledTotal : pendingTotal;
+  const aPool=hasSettlement ? 0 : pendingA;
+  const bPool=hasSettlement ? 0 : pendingB;
+
+  const status=hasSettlement
+    ?"SETTLED"
+    :m.betting_open
+      ?"BETTING OPEN"
+      :pendingTotal>0
+        ?"BETTING CLOSED"
+        :"NO BETS";
+
+  return `
+    <div class="admin-betting-info ${hasSettlement ? "settled" : ""}">
+      <div class="admin-betting-header">
+        <strong>BETTING</strong>
+        <span>${html(status)}</span>
+      </div>
+
+      <div class="admin-betting-grid">
+        <div>
+          <span class="muted small">${html(a.name)}</span>
+          <strong>${aPool.toLocaleString()}g</strong>
+        </div>
+        <div>
+          <span class="muted small">${html(b.name)}</span>
+          <strong>${bPool.toLocaleString()}g</strong>
+        </div>
+        <div class="admin-betting-total">
+          <span class="muted small">${hasSettlement ? "Final pool" : "Pool size"}</span>
+          <strong>${total.toLocaleString()}g</strong>
+        </div>
+      </div>
+
+      ${
+        hasSettlement
+          ?`<div class="admin-betting-footer">
+              <span>Paid out <b>${settledPayout.toLocaleString()}g</b></span>
+              <span>Cut <b>${settledCut.toLocaleString()}g</b></span>
+            </div>`
+          :`<div class="admin-betting-footer">
+              <span>${pendingTotal > 0 ? "Pending wagers" : "No wagers recorded"}</span>
+              <span>90% payout <b>${Math.floor(pendingTotal*0.90).toLocaleString()}g</b></span>
+            </div>`
+      }
+    </div>
   `;
 }
 
@@ -1596,7 +1673,6 @@ $("wager-form").addEventListener(
         $("wager-match").value=
           selectedMatchId;
 
-        updateWagerCompetitors();
         await loadWagers();
 
       }

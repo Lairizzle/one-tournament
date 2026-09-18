@@ -1257,6 +1257,111 @@ main:not(.shell) button:disabled {
 }
 
 /* ---------------------------------------------------------
+   Admin betting summary
+   --------------------------------------------------------- */
+
+.admin-betting-info {
+  margin-top: 16px;
+  padding: 14px 15px;
+  background: rgba(199, 170, 104, 0.035);
+  border: 1px solid rgba(199, 170, 104, 0.18);
+  border-radius: var(--radius-sm);
+}
+
+.admin-betting-info.settled {
+  background: rgba(115, 150, 111, 0.045);
+  border-color: rgba(115, 150, 111, 0.24);
+}
+
+.admin-betting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 11px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+}
+
+.admin-betting-info.settled .admin-betting-header {
+  color: var(--green-light);
+}
+
+.admin-betting-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-betting-grid > div {
+  min-width: 0;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.13);
+  border-radius: var(--radius-sm);
+}
+
+.admin-betting-grid span,
+.admin-betting-grid strong {
+  display: block;
+}
+
+.admin-betting-grid span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-betting-grid strong {
+  margin-top: 4px;
+  color: var(--text-strong);
+  font-family: var(--sans);
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.admin-betting-total {
+  border: 1px solid rgba(199, 170, 104, 0.16);
+}
+
+.admin-betting-info.settled .admin-betting-total {
+  border-color: rgba(115, 150, 111, 0.20);
+}
+
+.admin-betting-footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 14px;
+  margin-top: 10px;
+  color: var(--subtle);
+  font-size: 10px;
+}
+
+.admin-betting-footer b {
+  color: var(--muted-strong);
+}
+
+.match-betting-final .betting-head,
+.match-betting-closed .betting-head {
+  color: var(--muted-strong);
+}
+
+.match-betting-final {
+  background: rgba(115, 150, 111, 0.025);
+}
+
+.match-betting-final .betting-head > span:last-child {
+  color: var(--green-light);
+}
+
+.match-betting-closed .betting-head > span:last-child {
+  color: var(--subtle);
+}
+
+/* ---------------------------------------------------------
    Admin payout display
    --------------------------------------------------------- */
 
@@ -1452,6 +1557,14 @@ main:not(.shell) .muted.small {
 
   .payout-summary {
     grid-template-columns: 1fr;
+  }
+
+  .admin-betting-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-betting-total {
+    grid-column: 1 / -1;
   }
 }
 
