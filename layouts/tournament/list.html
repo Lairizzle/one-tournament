@@ -172,14 +172,27 @@
               <div class="pool-line">
                 <span>Final pool <b>${gold(finalTotal)}</b></span>
                 ${settled
-                  ? `<span>Paid out <b>${gold(finalPayout)}</b></span>`
+                  ? `<span>Total paid out <b>${gold(finalPayout)}</b></span>`
                   : `<span>No settlement recorded</span>`
                 }
               </div>
 
               ${
                 settled
-                  ? `<div class="pool-line">
+                  ? `<div class="odds-row final-payout-row">
+                       <div class="odds-card">
+                         <span class="odds-name">${esc(a.name)}</span>
+                         <strong>${gold(Number(betting.settled_a_payout || 0))}</strong>
+                         <small>final payout</small>
+                       </div>
+                       <div class="odds-card">
+                         <span class="odds-name">${esc(b.name)}</span>
+                         <strong>${gold(Number(betting.settled_b_payout || 0))}</strong>
+                         <small>final payout</small>
+                       </div>
+                     </div>
+
+                     <div class="pool-line">
                        <span>Tournament cut <b>${gold(finalCut)}</b></span>
                      </div>`
                   : ""
