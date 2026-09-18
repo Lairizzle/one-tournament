@@ -49,11 +49,9 @@ export async function onRequestPost({ request, params, env }) {
   );
   const losingPool = totalPool - winningPool;
 
-  if (winningPool <= 0 && wagers.length > 0) {
-    return Response.json({
-      error: "There are pending bets, but none are on the winning competitor"
-    }, { status: 400 });
-  }
+  // If there are no wagers on the winning side, the bet is refunded rather
+  // than penalizing bettors who had no opposing pool to bet against. Every
+  // pending wager receives its original amount back, with no tournament cut.
 
   // Normally 90% of the total pool is paid out and 10% goes to the
   // tournament. However, winners are guaranteed to receive at least their
@@ -61,20 +59,31 @@ export async function onRequestPost({ request, params, env }) {
   // use the full winning pool instead. In that case the tournament cut is
   // reduced to the amount of the losing pool rather than making winners lose
   // part of their original bet.
+  const oneSidedBet = totalPool > 0 && winningPool === 0;
   const standardPayoutPool = Math.floor(totalPool * 0.90);
-  const payoutPool = Math.max(standardPayoutPool, winningPool);
-  const tournamentCut = totalPool - payoutPool;
+  const payoutPool = oneSidedBet
+    ? totalPool
+    : winningPool > 0
+      ? Math.max(standardPayoutPool, winningPool)
+      : 0;
+  const tournamentCut = oneSidedBet ? 0 : totalPool - payoutPool;
 
-  const payouts = winningWagers.map((wager) => {
+  const payouts = oneSidedBet
+    ? wagers.map((wager) => ({
+        wager,
+        amount: Number(wager.amount),
+        remainder: 0
+      }))
+    : winningWagers.map((wager) => {
     const exactPayout = (Number(wager.amount) / winningPool) * payoutPool;
     const amount = Math.max(Number(wager.amount), Math.floor(exactPayout));
 
-    return {
-      wager,
-      amount,
-      remainder: exactPayout - Math.floor(exactPayout)
-    };
-  });
+      return {
+        wager,
+        amount,
+        remainder: exactPayout - Math.floor(exactPayout)
+      };
+    });
 
   // The floor/minimum calculation can leave a few whole gold pieces
   // undistributed. Give those to winning wagers in deterministic remainder
@@ -122,8 +131,11 @@ export async function onRequestPost({ request, params, env }) {
   for (const wager of wagers) {
     const payout =
       payouts.find((item) => Number(item.wager.id) === Number(wager.id))?.amount ?? 0;
-    const status =
-      Number(wager.competitor_id) === Number(match.winner_id) ? "won" : "lost";
+    const status = oneSidedBet
+      ? "refunded"
+      : Number(wager.competitor_id) === Number(match.winner_id)
+        ? "won"
+        : "lost";
 
     statements.push(
       env.DB.prepare(`
