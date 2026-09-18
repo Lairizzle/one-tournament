@@ -53,6 +53,22 @@ export async function onRequestGet({ params, env }) {
       COALESCE(s.losing_pool, 0) AS settled_losing_pool,
       COALESCE(s.tournament_cut, 0) AS settled_tournament_cut,
       COALESCE(s.payout_pool, 0) AS settled_payout_pool,
+      COALESCE((
+        SELECT SUM(p.amount)
+        FROM payouts p
+        JOIN wagers w ON w.id = p.wager_id
+        WHERE p.settlement_id = s.id
+          AND w.competitor_id = m.competitor_a_id
+      ), 0) AS settled_a_payout,
+
+      COALESCE((
+        SELECT SUM(p.amount)
+        FROM payouts p
+        JOIN wagers w ON w.id = p.wager_id
+        WHERE p.settlement_id = s.id
+          AND w.competitor_id = m.competitor_b_id
+      ), 0) AS settled_b_payout,
+
       s.settled_at
 
     FROM rounds r
@@ -103,6 +119,8 @@ export async function onRequestGet({ params, env }) {
           settled_losing_pool: Number(row.settled_losing_pool),
           settled_tournament_cut: Number(row.settled_tournament_cut),
           settled_payout_pool: Number(row.settled_payout_pool),
+          settled_a_payout: Number(row.settled_a_payout),
+          settled_b_payout: Number(row.settled_b_payout),
           settled_at: row.settled_at || null
         }
       });

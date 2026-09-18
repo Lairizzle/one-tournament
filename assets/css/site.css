@@ -275,6 +275,43 @@ p {
 .card-footer,
 .match-meta,
 .betting-head,
+
+.match-final-payouts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+  width: 100%;
+}
+
+.match-final-payouts > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+.match-final-payouts span {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.match-final-payouts strong {
+  font-size: 1rem;
+}
+
+.match-final-payouts small {
+  font-size: 0.7rem;
+  opacity: 0.55;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .pool-line,
 .section-heading,
 .round-heading,

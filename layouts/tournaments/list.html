@@ -382,6 +382,25 @@ function matchCard(match, odds) {
             : ""
         }
 
+        ${
+          match.betting?.settlement_id
+            ? `
+              <div class="match-final-payouts">
+                <div>
+                  <span>${esc(a?.name || "")}</span>
+                  <strong>${gold(match.betting.settled_a_payout || 0)}</strong>
+                  <small>final payout</small>
+                </div>
+                <div>
+                  <span>${esc(b?.name || "")}</span>
+                  <strong>${gold(match.betting.settled_b_payout || 0)}</strong>
+                  <small>final payout</small>
+                </div>
+              </div>
+            `
+            : ""
+        }
+
       </div>
 
     `;
